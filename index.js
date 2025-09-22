@@ -15,7 +15,11 @@ if (!TOKEN || !CHANNEL_ID || !TIKTOK_CHANNEL_ID) {
 }
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent // necesario para leer mensajes
+  ],
 });
 
 const mensajeMiddleman = `
@@ -39,61 +43,62 @@ https://www.tiktok.com/@venta.brainbrots0?_t=ZS-8zttLTrit4a&_r=1 🇺🇸
 > <@&1418601634417606707>
 `;
 
+// Guardar última actividad en cada canal
+let lastActivity = {
+  [CHANNEL_ID]: Date.now(),
+  [TIKTOK_CHANNEL_ID]: Date.now()
+};
+
+// 🔹 Detectar mensajes en los canales y actualizar actividad
+client.on("messageCreate", (msg) => {
+  if (msg.channelId === CHANNEL_ID || msg.channelId === TIKTOK_CHANNEL_ID) {
+    lastActivity[msg.channelId] = Date.now();
+    console.log(`📩 Actividad detectada en canal ${msg.channelId}`);
+  }
+});
+
 client.once("ready", async () => {
   console.log(`✅ Conectado como ${client.user.tag}`);
 
-  // 🔹 Enviar mensaje inicial de middleman
-  try {
-    const ch = await client.channels.fetch(CHANNEL_ID);
-    if (ch && ch.send) {
-      await ch.send(mensajeMiddleman);
-      console.log("Mensaje inicial (Middleman) enviado.");
-    }
-  } catch (err) {
-    console.error("Error enviando mensaje inicial de middleman:", err);
-  }
-
-  // 🔹 Enviar mensaje inicial de TikTok
-  try {
-    const chTik = await client.channels.fetch(TIKTOK_CHANNEL_ID);
-    if (chTik && chTik.send) {
-      await chTik.send(mensajeTikTok);
-      console.log("Mensaje inicial (TikTok) enviado.");
-    }
-  } catch (err) {
-    console.error("Error enviando mensaje inicial de TikTok:", err);
-  }
-
-  // 🔄 Intervalo para enviar mensaje de Middleman
+  // Intervalo para mensaje de Middleman
   setInterval(async () => {
     try {
       const channel = await client.channels.fetch(CHANNEL_ID);
       if (channel && channel.send) {
-        await channel.send(mensajeMiddleman);
-        console.log(`Mensaje Middleman enviado: ${new Date().toISOString()}`);
+        const minutesSinceActivity = (Date.now() - lastActivity[CHANNEL_ID]) / 60000;
+        if (minutesSinceActivity <= INTERVAL_MINUTES) {
+          await channel.send(mensajeMiddleman);
+          console.log(`✅ Mensaje Middleman enviado (${new Date().toISOString()})`);
+        } else {
+          console.log(`⏸️ Sin actividad reciente en Middleman, no se envió mensaje.`);
+        }
       }
     } catch (err) {
-      console.error("Error en setInterval al enviar mensaje Middleman:", err);
+      console.error("❌ Error en setInterval Middleman:", err);
     }
   }, INTERVAL_MINUTES * 60 * 1000);
 
-  // 🔄 Intervalo para enviar mensaje de TikTok (cada 30 minutos)
+  // Intervalo para mensaje de TikTok (30 min)
   setInterval(async () => {
     try {
       const channelTik = await client.channels.fetch(TIKTOK_CHANNEL_ID);
       if (channelTik && channelTik.send) {
-        await channelTik.send(mensajeTikTok);
-        console.log(`Mensaje TikTok enviado: ${new Date().toISOString()}`);
+        const minutesSinceActivity = (Date.now() - lastActivity[TIKTOK_CHANNEL_ID]) / 60000;
+        if (minutesSinceActivity <= 30) {
+          await channelTik.send(mensajeTikTok);
+          console.log(`✅ Mensaje TikTok enviado (${new Date().toISOString()})`);
+        } else {
+          console.log(`⏸️ Sin actividad reciente en TikTok, no se envió mensaje.`);
+        }
       }
     } catch (err) {
-      console.error("Error en setInterval al enviar mensaje TikTok:", err);
+      console.error("❌ Error en setInterval TikTok:", err);
     }
-  }, 30 * 60 * 1000); // 30 minutos
+  }, 30 * 60 * 1000);
 });
 
 const app = express();
 app.get("/", (req, res) => res.send("Bot activo 🚀"));
-
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`🌐 Web server escuchando en ${port}`));
 
