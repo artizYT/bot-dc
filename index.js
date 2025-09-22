@@ -39,7 +39,6 @@ https://www.tiktok.com/@venta.brainbrots0?_t=ZS-8zttLTrit4a&_r=1 🇪🇸
 
 **Guys, remember to follow us on TikTok, there you can find videos related to steal a brainbrot**  
 https://www.tiktok.com/@venta.brainbrots0?_t=ZS-8zttLTrit4a&_r=1 🇺🇸  
-> <@&1418601634417606707>
 `;
 
 let lastActivity = {
