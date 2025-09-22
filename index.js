@@ -1,12 +1,11 @@
-// index.js
 require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
 const axios = require("axios");
 
 const TOKEN = process.env.TOKEN;
-const CHANNEL_ID = process.env.CHANNEL_ID; // canal del mensaje de middleman
-const TIKTOK_CHANNEL_ID = process.env.TIKTOK_CHANNEL_ID; // canal para mensaje de TikTok
+const CHANNEL_ID = process.env.CHANNEL_ID;
+const TIKTOK_CHANNEL_ID = process.env.TIKTOK_CHANNEL_ID;
 const INTERVAL_MINUTES = parseInt(process.env.INTERVAL_MINUTES || "10", 10);
 
 if (!TOKEN || !CHANNEL_ID || !TIKTOK_CHANNEL_ID) {
@@ -18,7 +17,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent // necesario para leer mensajes
+    GatewayIntentBits.MessageContent
   ],
 });
 
@@ -43,13 +42,11 @@ https://www.tiktok.com/@venta.brainbrots0?_t=ZS-8zttLTrit4a&_r=1 🇺🇸
 > <@&1418601634417606707>
 `;
 
-// Guardar última actividad en cada canal
 let lastActivity = {
   [CHANNEL_ID]: Date.now(),
   [TIKTOK_CHANNEL_ID]: Date.now()
 };
 
-// 🔹 Detectar mensajes en los canales y actualizar actividad
 client.on("messageCreate", (msg) => {
   if (msg.channelId === CHANNEL_ID || msg.channelId === TIKTOK_CHANNEL_ID) {
     lastActivity[msg.channelId] = Date.now();
@@ -60,7 +57,6 @@ client.on("messageCreate", (msg) => {
 client.once("ready", async () => {
   console.log(`✅ Conectado como ${client.user.tag}`);
 
-  // Intervalo para mensaje de Middleman
   setInterval(async () => {
     try {
       const channel = await client.channels.fetch(CHANNEL_ID);
@@ -78,7 +74,6 @@ client.once("ready", async () => {
     }
   }, INTERVAL_MINUTES * 60 * 1000);
 
-  // Intervalo para mensaje de TikTok (30 min)
   setInterval(async () => {
     try {
       const channelTik = await client.channels.fetch(TIKTOK_CHANNEL_ID);
@@ -102,13 +97,12 @@ app.get("/", (req, res) => res.send("Bot activo 🚀"));
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`🌐 Web server escuchando en ${port}`));
 
-// 🔥 Auto-ping para mantener Render despierto
 if (process.env.RENDER_EXTERNAL_URL) {
   setInterval(() => {
     axios.get(process.env.RENDER_EXTERNAL_URL)
       .then(() => console.log("⏱️ Self-ping exitoso"))
       .catch(err => console.error("❌ Error en self-ping:", err.message));
-  }, 5 * 60 * 1000); // cada 5 minutos
+  }, 5 * 60 * 1000);
 }
 
 client.login(TOKEN);
