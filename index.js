@@ -2,6 +2,7 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits } = require("discord.js");
 const express = require("express");
+const axios = require("axios");
 
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
@@ -28,7 +29,7 @@ const mensaje = `
 **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
 `;
 
-
+// Cuando el bot arranca
 client.once("ready", async () => {
   console.log(`✅ Conectado como ${client.user.tag}`);
 
@@ -42,6 +43,7 @@ client.once("ready", async () => {
     console.error("Error enviando mensaje inicial:", err);
   }
 
+  // Intervalo para enviar el mensaje al canal
   setInterval(async () => {
     try {
       const channel = await client.channels.fetch(CHANNEL_ID);
@@ -57,7 +59,17 @@ client.once("ready", async () => {
 
 const app = express();
 app.get("/", (req, res) => res.send("Bot activo 🚀"));
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`🌐 Web server escuchando en ${port}`));
+
+// 🔥 Auto-ping para mantener Render despierto
+if (process.env.RENDER_EXTERNAL_URL) {
+  setInterval(() => {
+    axios.get(process.env.RENDER_EXTERNAL_URL)
+      .then(() => console.log("⏱️ Self-ping exitoso"))
+      .catch(err => console.error("❌ Error en self-ping:", err.message));
+  }, 5 * 60 * 1000); // cada 5 minutos
+}
 
 client.login(TOKEN);
