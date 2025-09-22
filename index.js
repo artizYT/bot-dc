@@ -5,7 +5,7 @@ const express = require("express");
 
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
-const INTERVAL_MINUTES = parseInt(process.env.INTERVAL_MINUTES || "5", 10);
+const INTERVAL_MINUTES = parseInt(process.env.INTERVAL_MINUTES || "10", 10);
 
 if (!TOKEN || !CHANNEL_ID) {
   console.error("❌ Falta TOKEN o CHANNEL_ID en variables de entorno.");
