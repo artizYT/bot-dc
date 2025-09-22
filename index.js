@@ -24,12 +24,12 @@ const client = new Client({
 const mensajeMiddleman = `
 # 📢 Servicio de Middelman 🛠️ - 🇪🇸
 
-> ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros. No arriesgues tus ítems, usa el servicio de middleman y comercia con tranquilidad.*** <@&1418599752358170805> 🛠️ <@&1418601634417606707>  
+> ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros. No arriesgues tus ítems, usa el servicio de middleman y comercia con tranquilidad.***  
 **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
 
 # 📢 Middleman Service 🛠️ - 🇺🇸
 
-> ***On this server we have reliable middlemen so your trades are 100% safe. Don't risk your items, use the middleman service and trade with peace of mind.*** <@&1418599752358170805> 🛠️ <@&1418601634417606707>  
+> ***On this server we have reliable middlemen so your trades are 100% safe. Don't risk your items, use the middleman service and trade with peace of mind.*** 
 **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
 `;
 
