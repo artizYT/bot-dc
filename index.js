@@ -70,6 +70,9 @@ let timers = {};
 const commandCooldowns = new Map();
 const COOLDOWN_MS = 3000;
 
+const activeSorteos = new Map();
+const GIVEAWAY_EMOJI = "🎉";
+
 async function sendBothMessages() {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
@@ -109,8 +112,17 @@ client.on("messageCreate", (msg) => {
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-  if (interaction.commandName !== "alerta") return;
+  
+  const commandName = interaction.commandName;
+  
+  if (commandName === "alerta") {
+    await handleAlertaCommand(interaction);
+  } else if (commandName === "sorteo") {
+    await handleSorteoCommand(interaction);
+  }
+});
 
+async function handleAlertaCommand(interaction) {
   console.log(`📝 Comando /alerta ejecutado por ${interaction.user.tag}`);
 
   const userId = interaction.user.id;
@@ -249,7 +261,207 @@ client.on("interactionCreate", async (interaction) => {
       console.error("❌ Error crítico manejando error:", criticalError.message);
     }
   }
-});
+}
+
+async function handleSorteoCommand(interaction) {
+  console.log(`🎉 Comando /sorteo ejecutado por ${interaction.user.tag}`);
+
+  const userId = interaction.user.id;
+  const now = Date.now();
+  const cooldownEnd = commandCooldowns.get(`sorteo_${userId}`) || 0;
+  
+  if (now < cooldownEnd) {
+    const timeLeft = Math.ceil((cooldownEnd - now) / 1000);
+    try {
+      return await interaction.reply({ 
+        content: `⏰ Espera ${timeLeft} segundos antes de crear otro sorteo.`,
+        flags: 64
+      });
+    } catch (err) {
+      console.log("⚠️ Error enviando mensaje de cooldown sorteo");
+    }
+    return;
+  }
+
+  try {
+    if (interaction.replied || interaction.deferred) {
+      console.log("⚠️ Interacción de sorteo ya procesada anteriormente");
+      return;
+    }
+
+    await interaction.deferReply({ flags: 64 });
+
+    commandCooldowns.set(`sorteo_${userId}`, now + 10000);
+
+    if (!interaction.guild) {
+      return await interaction.editReply({ 
+        content: "❌ Este comando solo funciona en servidores."
+      });
+    }
+
+    const guild = interaction.guild;
+    let member;
+    
+    try {
+      member = await guild.members.fetch(interaction.user.id);
+    } catch (fetchError) {
+      console.error("❌ Error obteniendo miembro para sorteo:", fetchError.message);
+      return await interaction.editReply({ 
+        content: "❌ No se pudo verificar tus permisos."
+      });
+    }
+
+    const isOwner = interaction.user.id === guild.ownerId;
+    const isAdmin = member.permissions ? member.permissions.has(PermissionsBitField.Flags.Administrator) : false;
+
+    if (!isOwner && !isAdmin) {
+      return await interaction.editReply({ 
+        content: "❌ No tienes permisos para crear sorteos."
+      });
+    }
+
+    const objeto = interaction.options.getString("objeto");
+    const descripcion = interaction.options.getString("descripcion");
+    const imagen = interaction.options.getAttachment("imagen");
+    const duracion = interaction.options.getInteger("duracion");
+
+    if (!imagen) {
+      return await interaction.editReply({ 
+        content: "❌ Debes subir una imagen para el sorteo."
+      });
+    }
+
+    if (duracion < 1 || duracion > 10080) {
+      return await interaction.editReply({ 
+        content: "❌ La duración debe estar entre 1 minuto y 7 días (10080 minutos)."
+      });
+    }
+
+    const channel = interaction.channel;
+    const endTime = new Date(Date.now() + duracion * 60 * 1000);
+    
+    const embed = {
+      title: `🎉 SORTEO: ${objeto}`,
+      description: `${descripcion}\n\n**¿Cómo participar?**\nReacciona con ${GIVEAWAY_EMOJI} para participar!\n\n**Termina:** <t:${Math.floor(endTime.getTime() / 1000)}:R>\n**Organizado por:** ${interaction.user}`,
+      color: 0x00FF00,
+      image: {
+        url: imagen.url
+      },
+      footer: {
+        text: `Termina el ${endTime.toLocaleString('es-ES')}`,
+        icon_url: client.user.displayAvatarURL()
+      },
+      timestamp: endTime.toISOString()
+    };
+
+    try {
+      const giveawayMessage = await channel.send({ embeds: [embed] });
+      await giveawayMessage.react(GIVEAWAY_EMOJI);
+
+      activeSorteos.set(giveawayMessage.id, {
+        messageId: giveawayMessage.id,
+        channelId: channel.id,
+        guildId: guild.id,
+        objeto: objeto,
+        descripcion: descripcion,
+        createdBy: interaction.user.id,
+        endTime: endTime.getTime(),
+        ended: false
+      });
+
+      setTimeout(() => {
+        endGiveaway(giveawayMessage.id);
+      }, duracion * 60 * 1000);
+
+      await interaction.editReply({ 
+        content: `✅ ¡Sorteo creado exitosamente! 🎉\n**Objeto:** ${objeto}\n**Duración:** ${duracion} minutos`
+      });
+
+      console.log(`✅ Sorteo creado: ${objeto} por ${interaction.user.tag}`);
+
+    } catch (error) {
+      console.error("❌ Error creando sorteo:", error.message);
+      await interaction.editReply({ 
+        content: "❌ Error creando el sorteo. Intenta de nuevo."
+      });
+    }
+
+  } catch (err) {
+    console.error("❌ Error crítico en comando /sorteo:", err.message, err.stack);
+    
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ 
+          content: "⚠️ Error procesando el sorteo.",
+          flags: 64
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({ 
+          content: "⚠️ Error procesando el sorteo."
+        });
+      }
+    } catch (criticalError) {
+      console.error("❌ Error crítico manejando error de sorteo:", criticalError.message);
+    }
+  }
+}
+
+async function endGiveaway(messageId) {
+  const giveaway = activeSorteos.get(messageId);
+  if (!giveaway || giveaway.ended) return;
+
+  try {
+    const channel = await client.channels.fetch(giveaway.channelId);
+    if (!channel) return;
+
+    const message = await channel.messages.fetch(messageId);
+    if (!message) return;
+
+    const reaction = message.reactions.cache.get(GIVEAWAY_EMOJI);
+    if (!reaction) {
+      await channel.send(`🎉 **SORTEO TERMINADO** 🎉\n\n**${giveaway.objeto}**\n\n❌ No hubo participantes válidos.`);
+      activeSorteos.delete(messageId);
+      return;
+    }
+
+    const users = await reaction.users.fetch();
+    const participants = users.filter(user => !user.bot);
+
+    if (participants.size === 0) {
+      await channel.send(`🎉 **SORTEO TERMINADO** 🎉\n\n**${giveaway.objeto}**\n\n❌ No hubo participantes válidos.`);
+      activeSorteos.delete(messageId);
+      return;
+    }
+
+    const participantsArray = Array.from(participants.values());
+    const winner = participantsArray[Math.floor(Math.random() * participantsArray.length)];
+
+    const winnerEmbed = {
+      title: "🎉 ¡SORTEO TERMINADO! 🎉",
+      description: `**Objeto:** ${giveaway.objeto}\n\n🎊 **¡GANADOR!** 🎊\n${winner}\n\n**Participantes:** ${participants.size}\n**Organizado por:** <@${giveaway.createdBy}>`,
+      color: 0xFFD700,
+      footer: {
+        text: "¡Felicidades al ganador!",
+        icon_url: winner.displayAvatarURL()
+      },
+      timestamp: new Date().toISOString()
+    };
+
+    await channel.send({ 
+      content: `🎉 ${winner} ¡Felicidades! Has ganado **${giveaway.objeto}**! 🎉`,
+      embeds: [winnerEmbed] 
+    });
+
+    giveaway.ended = true;
+    activeSorteos.delete(messageId);
+
+    console.log(`✅ Sorteo terminado: ${giveaway.objeto} - Ganador: ${winner.tag}`);
+
+  } catch (error) {
+    console.error("❌ Error finalizando sorteo:", error.message);
+    activeSorteos.delete(messageId);
+  }
+}
 
 client.once("clientReady", async (readyClient) => {
   console.log(`✅ Bot conectado como ${readyClient.user.tag}`);
