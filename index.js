@@ -465,6 +465,8 @@ async function endGiveaway(messageId) {
 
 client.once("clientReady", async (readyClient) => {
   console.log(`✅ Bot conectado como ${readyClient.user.tag}`);
+  console.log(`🏠 Conectado a ${readyClient.guilds.cache.size} servidor(es)`);
+  console.log(`📡 Ping: ${readyClient.ws.ping}ms`);
   
   const commands = [
     new SlashCommandBuilder()
@@ -481,6 +483,39 @@ client.once("clientReady", async (readyClient) => {
             { name: "Advertencia", value: "advertencia" },
             { name: "Inventario", value: "inventario" }
           )
+      )
+      .toJSON(),
+    
+    new SlashCommandBuilder()
+      .setName("sorteo")
+      .setDescription("Crear un sorteo con imagen y duración personalizada")
+      .addStringOption(option =>
+        option
+          .setName("objeto")
+          .setDescription("Nombre del objeto a sortear")
+          .setRequired(true)
+          .setMaxLength(100)
+      )
+      .addStringOption(option =>
+        option
+          .setName("descripcion")
+          .setDescription("Descripción del sorteo")
+          .setRequired(true)
+          .setMaxLength(500)
+      )
+      .addAttachmentOption(option =>
+        option
+          .setName("imagen")
+          .setDescription("Imagen del objeto a sortear")
+          .setRequired(true)
+      )
+      .addIntegerOption(option =>
+        option
+          .setName("duracion")
+          .setDescription("Duración del sorteo en minutos (1-10080)")
+          .setRequired(true)
+          .setMinValue(1)
+          .setMaxValue(10080)
       )
       .toJSON()
   ];
@@ -522,20 +557,47 @@ process.on("uncaughtException", (error) => {
 const app = express();
 
 app.get("/", (req, res) => {
+  const uptime = process.uptime();
+  const hours = Math.floor(uptime / 3600);
+  const minutes = Math.floor((uptime % 3600) / 60);
+  const seconds = Math.floor(uptime % 60);
+  
   res.json({ 
     status: "active", 
     bot: client.user ? client.user.tag : "connecting...",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    uptime: `${hours}h ${minutes}m ${seconds}s`,
+    uptimeSeconds: uptime,
+    timestamp: new Date().toISOString(),
+    memoryUsage: process.memoryUsage(),
+    activeSorteos: activeSorteos.size,
+    ping: client.ws ? client.ws.ping : "N/A",
+    ready: client.readyAt ? true : false
   });
 });
 
 app.get("/health", (req, res) => {
-  res.json({ 
-    status: "healthy",
+  const isHealthy = client.readyAt && client.ws.ping < 1000;
+  res.status(isHealthy ? 200 : 503).json({ 
+    status: isHealthy ? "healthy" : "degraded",
     ready: client.readyAt ? true : false,
     guilds: client.guilds.cache.size,
-    ping: client.ws.ping
+    ping: client.ws ? client.ws.ping : -1,
+    uptime: process.uptime(),
+    lastRestart: client.readyAt ? client.readyAt.toISOString() : null,
+    activeSorteos: activeSorteos.size,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
+app.get("/status", (req, res) => {
+  res.status(200).json({
+    online: true,
+    service: "discord-bot",
+    timestamp: Date.now()
   });
 });
 
@@ -545,17 +607,57 @@ app.listen(port, () => {
 });
 
 if (process.env.RENDER_EXTERNAL_URL) {
-  const keepAliveInterval = 5 * 60 * 1000;
+  const keepAliveInterval = 14 * 60 * 1000;
   console.log(`🔄 Keep-alive configurado cada ${keepAliveInterval / 1000} segundos`);
   
-  setInterval(async () => {
+  setTimeout(async () => {
     try {
       await axios.get(process.env.RENDER_EXTERNAL_URL, { timeout: 10000 });
-      console.log("✅ Keep-alive ping exitoso");
+      console.log("✅ Keep-alive inicial exitoso");
+    } catch (error) {
+      console.error("❌ Error en keep-alive inicial:", error.message);
+    }
+  }, 30000);
+
+  setInterval(async () => {
+    try {
+      const startTime = Date.now();
+      const response = await axios.get(process.env.RENDER_EXTERNAL_URL, { 
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'DiscordBot-KeepAlive/1.0',
+          'Accept': 'application/json'
+        }
+      });
+      
+      const responseTime = Date.now() - startTime;
+      console.log(`✅ Keep-alive exitoso (${responseTime}ms) - Status: ${response.status}`);
+      
     } catch (error) {
       console.error("❌ Error en keep-alive:", error.message);
+      
+      setTimeout(async () => {
+        try {
+          await axios.get(process.env.RENDER_EXTERNAL_URL, { timeout: 5000 });
+          console.log("✅ Keep-alive retry exitoso");
+        } catch (retryError) {
+          console.error("❌ Keep-alive retry falló:", retryError.message);
+        }
+      }, 5000);
     }
   }, keepAliveInterval);
+
+  // Keep-alive adicional cada 5 minutos como backup
+  setInterval(async () => {
+    try {
+      const healthCheck = await axios.get(`${process.env.RENDER_EXTERNAL_URL}/health`, { 
+        timeout: 8000 
+      });
+      console.log(`🏥 Health check exitoso - Bot: ${client.user ? client.user.tag : 'connecting'}`);
+    } catch (error) {
+      console.error("❌ Health check falló:", error.message);
+    }
+  }, 5 * 60 * 1000);
 }
 
 async function gracefulShutdown() {
@@ -566,6 +668,7 @@ async function gracefulShutdown() {
   });
   
   commandCooldowns.clear();
+  activeSorteos.clear();
   
   if (client && client.readyAt) {
     await client.destroy();
