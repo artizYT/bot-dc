@@ -49,14 +49,20 @@ https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 > <@&1418601634417606707>
 `;
 
+const mensajeAdvertencia = `
+# Recuerden no unirse a links de desconocidos 
+> <@&1418601634417606707>
+`;
+
 let timers = {};
 
 async function sendBothMessages() {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
-    if (!channel) throw new Error("Canal no encontrado");
+    if (!channel.isTextBased()) return;
     await channel.send(mensajeMiddleman);
     await channel.send(mensajeTikTok);
+    await channel.send(mensajeAdvertencia);
   } catch (err) {
     console.error("Error enviando mensajes automáticos:", err);
   }
@@ -64,9 +70,9 @@ async function sendBothMessages() {
 
 function resetTimer(channelId = CHANNEL_ID) {
   clearTimeout(timers[channelId]);
-  timers[channelId] = setTimeout(() => {
-    sendBothMessages().catch(() => {});
-  }, INACTIVITY_MS);
+  timers[channelId] = setTimeout(async () => {
+  await sendBothMessages();
+}, INACTIVITY_MS);
 }
 
 client.on("messageCreate", (msg) => {
@@ -84,7 +90,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!interaction.guild) {
       return interaction.reply({ 
         content: "❌ Este comando solo funciona en servidores.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
     }
 
@@ -97,7 +103,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!isOwner && !isAdmin) {
       return interaction.reply({ 
         content: "❌ No tienes permisos para usar este comando.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
     }
 
@@ -106,26 +112,32 @@ client.on("interactionCreate", async (interaction) => {
     if (!channel) {
       return interaction.reply({ 
         content: "⚠️ Canal de destino no encontrado.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
     }
 
-    if (tipo === "tiktok") {
+    if (tipo === "advertencia"){
+      await interaction.reply({ 
+        content: "✅ Mensaje de Advertencia enviado.", 
+        ephemeral: true 
+      });
+      await channel.send(mensajeAdvertencia);
+     } else if (tipo === "tiktok") {
       await interaction.reply({ 
         content: "✅ Mensaje de TikTok enviado.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
       await channel.send(mensajeTikTok);
     } else if (tipo === "middleman") {
       await interaction.reply({ 
         content: "✅ Mensaje de Middleman enviado.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
       await channel.send(mensajeMiddleman);
     } else {
       await interaction.reply({ 
         content: "❌ Tipo no válido.", 
-        flags: InteractionResponseFlags.Ephemeral 
+        ephemeral: true 
       });
     }
 
@@ -136,12 +148,12 @@ client.on("interactionCreate", async (interaction) => {
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp({ 
           content: "⚠️ Error enviando el mensaje.", 
-          flags: InteractionResponseFlags.Ephemeral 
+          ephemeral: true 
         });
       } else {
         await interaction.reply({ 
           content: "⚠️ Error enviando el mensaje.", 
-          flags: InteractionResponseFlags.Ephemeral 
+          ephemeral: true 
         });
       }
     } catch (e) {
@@ -162,7 +174,8 @@ client.once("ready", async () => {
           .setRequired(true)
           .addChoices(
             { name: "TikTok", value: "tiktok" },
-            { name: "Middleman", value: "middleman" }
+            { name: "Middleman", value: "middleman" },
+            { name: "Advertencia", value: "advertencia" }
           )
       )
       .toJSON()
