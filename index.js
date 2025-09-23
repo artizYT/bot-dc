@@ -3,11 +3,10 @@ const {
   Client, 
   GatewayIntentBits, 
   SlashCommandBuilder, 
-  PermissionsBitField,
-  REST,
-  Routes,
-  MessageFlags
+  PermissionsBitField
 } = require("discord.js");
+const { REST } = require("@discordjs/rest");
+const { Routes } = require("discord-api-types/v10");
 const express = require("express");
 const axios = require("axios");
 
@@ -50,7 +49,7 @@ https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 `;
 
 const mensajeAdvertencia = `
-# 🚨Recuerden no unirse a links de desconocidos🚨
+# 🚨 Recuerden no unirse a links de desconocidos 🚨 
 > <@&1418601634417606707>
 `;
 
@@ -90,7 +89,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!interaction.guild) {
       return interaction.reply({ 
         content: "❌ Este comando solo funciona en servidores.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
     }
 
@@ -103,7 +102,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!isOwner && !isAdmin) {
       return interaction.reply({ 
         content: "❌ No tienes permisos para usar este comando.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
     }
 
@@ -112,32 +111,32 @@ client.on("interactionCreate", async (interaction) => {
     if (!channel) {
       return interaction.reply({ 
         content: "⚠️ Canal de destino no encontrado.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
     }
 
     if (tipo === "advertencia"){
       await interaction.reply({ 
         content: "✅ Mensaje de Advertencia enviado.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
       await channel.send(mensajeAdvertencia);
     } else if (tipo === "tiktok") {
       await interaction.reply({ 
         content: "✅ Mensaje de TikTok enviado.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
       await channel.send(mensajeTikTok);
     } else if (tipo === "middleman") {
       await interaction.reply({ 
         content: "✅ Mensaje de Middleman enviado.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
       await channel.send(mensajeMiddleman);
     } else {
       await interaction.reply({ 
         content: "❌ Tipo no válido.", 
-        flags: MessageFlags.Ephemeral
+        ephemeral: true 
       });
     }
 
@@ -148,12 +147,12 @@ client.on("interactionCreate", async (interaction) => {
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp({ 
           content: "⚠️ Error enviando el mensaje.", 
-          flags: MessageFlags.Ephemeral
+          ephemeral: true 
         });
       } else {
         await interaction.reply({ 
           content: "⚠️ Error enviando el mensaje.", 
-          flags: MessageFlags.Ephemeral
+          ephemeral: true 
         });
       }
     } catch (e) {
