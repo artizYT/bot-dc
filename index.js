@@ -3,8 +3,7 @@ const {
   Client, 
   GatewayIntentBits, 
   SlashCommandBuilder, 
-  PermissionsBitField,
-  InteractionResponseType
+  PermissionsBitField
 } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
@@ -98,11 +97,13 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== "alerta") return;
 
+  const replyOptions = { flags: 64 };
+
   try {
     if (!interaction.guild) {
       return await interaction.reply({ 
-        content: "❌ Este comando solo funciona en servidores.", 
-        flags: 64
+        content: "❌ Este comando solo funciona en servidores.",
+        ...replyOptions
       });
     }
 
@@ -114,8 +115,8 @@ client.on("interactionCreate", async (interaction) => {
 
     if (!isOwner && !isAdmin) {
       return await interaction.reply({ 
-        content: "❌ No tienes permisos para usar este comando.", 
-        flags: 64
+        content: "❌ No tienes permisos para usar este comando.",
+        ...replyOptions
       });
     }
 
@@ -124,8 +125,8 @@ client.on("interactionCreate", async (interaction) => {
     
     if (!channel || !channel.isTextBased()) {
       return await interaction.reply({ 
-        content: "⚠️ Canal de destino no encontrado.", 
-        flags: 64
+        content: "⚠️ Canal de destino no encontrado.",
+        ...replyOptions
       });
     }
 
@@ -147,14 +148,14 @@ client.on("interactionCreate", async (interaction) => {
         break;
       default:
         return await interaction.reply({ 
-          content: "❌ Tipo no válido.", 
-          flags: 64
+          content: "❌ Tipo no válido.",
+          ...replyOptions
         });
     }
 
     await interaction.reply({ 
-      content: respuesta, 
-      flags: 64
+      content: respuesta,
+      ...replyOptions
     });
 
     await channel.send(mensaje);
@@ -164,16 +165,15 @@ client.on("interactionCreate", async (interaction) => {
     console.error("❌ Error en comando /alerta:", err.message);
     
     try {
+      const errorResponse = { 
+        content: "⚠️ Error procesando el comando.",
+        ...replyOptions
+      };
+
       if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({ 
-          content: "⚠️ Error procesando el comando.", 
-          flags: 64
-        });
+        await interaction.followUp(errorResponse);
       } else {
-        await interaction.reply({ 
-          content: "⚠️ Error procesando el comando.", 
-          flags: 64
-        });
+        await interaction.reply(errorResponse);
       }
     } catch (followUpError) {
       console.error("❌ Error enviando respuesta de error:", followUpError.message);
