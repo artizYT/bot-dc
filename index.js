@@ -3,7 +3,8 @@ const {
   Client, 
   GatewayIntentBits, 
   SlashCommandBuilder, 
-  PermissionsBitField
+  PermissionsBitField,
+  InteractionResponseType
 } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
@@ -17,6 +18,7 @@ const CHANNEL_ID = process.env.CHANNEL_ID;
 const INACTIVITY_MS = parseInt(process.env.INACTIVITY_MS) || 20 * 60 * 1000;
 
 if (!TOKEN || !CHANNEL_ID || !CLIENT_ID || !GUILD_ID) {
+  console.error("❌ Variables de entorno faltantes");
   process.exit(1);
 }
 
@@ -29,7 +31,7 @@ const client = new Client({
 });
 
 const mensajeMiddleman = `
-# 📢 Servicio de Middelman 🛠️ - 🇪🇸
+# 📢 Servicio de Middleman 🛠️ - 🇪🇸
 > ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.***
 > **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
 
@@ -58,17 +60,28 @@ let timers = {};
 async function sendBothMessages() {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
-    if (!channel.isTextBased()) return;
+    if (!channel || !channel.isTextBased()) {
+      console.error("❌ Canal no encontrado o no es de texto");
+      return;
+    }
+    
     await channel.send(mensajeMiddleman);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await channel.send(mensajeTikTok);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await channel.send(mensajeAdvertencia);
+    
+    console.log("✅ Mensajes automáticos enviados");
   } catch (err) {
-    console.error("Error enviando mensajes automáticos:", err);
+    console.error("❌ Error enviando mensajes automáticos:", err.message);
   }
 }
 
 function resetTimer(channelId = CHANNEL_ID) {
-  clearTimeout(timers[channelId]);
+  if (timers[channelId]) {
+    clearTimeout(timers[channelId]);
+  }
+  
   timers[channelId] = setTimeout(async () => {
     await sendBothMessages();
   }, INACTIVITY_MS);
@@ -87,9 +100,9 @@ client.on("interactionCreate", async (interaction) => {
 
   try {
     if (!interaction.guild) {
-      return interaction.reply({ 
+      return await interaction.reply({ 
         content: "❌ Este comando solo funciona en servidores.", 
-        ephemeral: true 
+        flags: 64
       });
     }
 
@@ -100,68 +113,77 @@ client.on("interactionCreate", async (interaction) => {
     const isAdmin = member.permissions ? member.permissions.has(PermissionsBitField.Flags.Administrator) : false;
 
     if (!isOwner && !isAdmin) {
-      return interaction.reply({ 
+      return await interaction.reply({ 
         content: "❌ No tienes permisos para usar este comando.", 
-        ephemeral: true 
+        flags: 64
       });
     }
 
     const tipo = interaction.options.getString("tipo");
     const channel = await client.channels.fetch(CHANNEL_ID);
-    if (!channel) {
-      return interaction.reply({ 
+    
+    if (!channel || !channel.isTextBased()) {
+      return await interaction.reply({ 
         content: "⚠️ Canal de destino no encontrado.", 
-        ephemeral: true 
+        flags: 64
       });
     }
 
-    if (tipo === "advertencia"){
-      await interaction.reply({ 
-        content: "✅ Mensaje de Advertencia enviado.", 
-        ephemeral: true 
-      });
-      await channel.send(mensajeAdvertencia);
-    } else if (tipo === "tiktok") {
-      await interaction.reply({ 
-        content: "✅ Mensaje de TikTok enviado.", 
-        ephemeral: true 
-      });
-      await channel.send(mensajeTikTok);
-    } else if (tipo === "middleman") {
-      await interaction.reply({ 
-        content: "✅ Mensaje de Middleman enviado.", 
-        ephemeral: true 
-      });
-      await channel.send(mensajeMiddleman);
-    } else {
-      await interaction.reply({ 
-        content: "❌ Tipo no válido.", 
-        ephemeral: true 
-      });
+    let mensaje = "";
+    let respuesta = "";
+
+    switch(tipo) {
+      case "advertencia":
+        mensaje = mensajeAdvertencia;
+        respuesta = "✅ Mensaje de Advertencia enviado.";
+        break;
+      case "tiktok":
+        mensaje = mensajeTikTok;
+        respuesta = "✅ Mensaje de TikTok enviado.";
+        break;
+      case "middleman":
+        mensaje = mensajeMiddleman;
+        respuesta = "✅ Mensaje de Middleman enviado.";
+        break;
+      default:
+        return await interaction.reply({ 
+          content: "❌ Tipo no válido.", 
+          flags: 64
+        });
     }
 
+    await interaction.reply({ 
+      content: respuesta, 
+      flags: 64
+    });
+
+    await channel.send(mensaje);
     resetTimer(CHANNEL_ID);
+
   } catch (err) {
-    console.error("Error en /alerta:", err);
+    console.error("❌ Error en comando /alerta:", err.message);
+    
     try {
       if (interaction.deferred || interaction.replied) {
         await interaction.followUp({ 
-          content: "⚠️ Error enviando el mensaje.", 
-          ephemeral: true 
+          content: "⚠️ Error procesando el comando.", 
+          flags: 64
         });
       } else {
         await interaction.reply({ 
-          content: "⚠️ Error enviando el mensaje.", 
-          ephemeral: true 
+          content: "⚠️ Error procesando el comando.", 
+          flags: 64
         });
       }
-    } catch (e) {
-      console.error("No se pudo notificar al usuario sobre el error:", e);
+    } catch (followUpError) {
+      console.error("❌ Error enviando respuesta de error:", followUpError.message);
     }
   }
 });
 
-client.once("ready", async () => {
+client.once("clientReady", async (readyClient) => {
+  console.log(`✅ Bot conectado como ${readyClient.user.tag}`);
+  
   const commands = [
     new SlashCommandBuilder()
       .setName("alerta")
@@ -179,25 +201,100 @@ client.once("ready", async () => {
       )
       .toJSON()
   ];
+
   const rest = new REST({ version: "10" }).setToken(TOKEN);
+  
   try {
-    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+    console.log("🔄 Registrando comandos slash...");
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), 
+      { body: commands }
+    );
+    console.log("✅ Comandos slash registrados correctamente");
   } catch (err) {
-    console.error("Error registrando comandos:", err);
+    console.error("❌ Error registrando comandos:", err.message);
   }
+
   resetTimer(CHANNEL_ID);
-  console.log(`✅ Conectado como ${client.user.tag}`);
+  console.log("✅ Sistema de mensajes automáticos iniciado");
+});
+
+client.on("error", (error) => {
+  console.error("❌ Error del cliente Discord:", error.message);
+});
+
+client.on("warn", (warning) => {
+  console.warn("⚠️ Advertencia del cliente Discord:", warning);
+});
+
+process.on("unhandledRejection", (error) => {
+  console.error("❌ Promise rechazada no manejada:", error.message);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("❌ Excepción no capturada:", error.message);
+  process.exit(1);
 });
 
 const app = express();
-app.get("/", (req, res) => res.send("Bot activo 🚀"));
+
+app.get("/", (req, res) => {
+  res.json({ 
+    status: "active", 
+    bot: client.user ? client.user.tag : "connecting...",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "healthy",
+    ready: client.readyAt ? true : false,
+    guilds: client.guilds.cache.size,
+    ping: client.ws.ping
+  });
+});
+
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Web server en puerto ${port}`));
+app.listen(port, () => {
+  console.log(`🚀 Servidor web ejecutándose en puerto ${port}`);
+});
 
 if (process.env.RENDER_EXTERNAL_URL) {
-  setInterval(() => {
-    axios.get(process.env.RENDER_EXTERNAL_URL).catch(() => {});
-  }, 5 * 60 * 1000);
+  const keepAliveInterval = 5 * 60 * 1000;
+  console.log(`🔄 Keep-alive configurado cada ${keepAliveInterval / 1000} segundos`);
+  
+  setInterval(async () => {
+    try {
+      await axios.get(process.env.RENDER_EXTERNAL_URL, { timeout: 10000 });
+      console.log("✅ Keep-alive ping exitoso");
+    } catch (error) {
+      console.error("❌ Error en keep-alive:", error.message);
+    }
+  }, keepAliveInterval);
 }
 
-client.login(TOKEN);
+async function gracefulShutdown() {
+  console.log("🔄 Iniciando cierre graceful...");
+  
+  Object.values(timers).forEach(timer => {
+    if (timer) clearTimeout(timer);
+  });
+  
+  if (client && client.readyAt) {
+    await client.destroy();
+    console.log("✅ Cliente Discord desconectado");
+  }
+  
+  console.log("✅ Cierre graceful completado");
+  process.exit(0);
+}
+
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
+client.login(TOKEN).catch((error) => {
+  console.error("❌ Error al iniciar sesión:", error.message);
+  process.exit(1);
+});
