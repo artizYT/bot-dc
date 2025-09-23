@@ -3,8 +3,7 @@ const {
   Client, 
   GatewayIntentBits, 
   SlashCommandBuilder, 
-  PermissionsBitField,
-  InteractionResponseFlags
+  PermissionsBitField
 } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
@@ -71,8 +70,8 @@ async function sendBothMessages() {
 function resetTimer(channelId = CHANNEL_ID) {
   clearTimeout(timers[channelId]);
   timers[channelId] = setTimeout(async () => {
-  await sendBothMessages();
-}, INACTIVITY_MS);
+    await sendBothMessages();
+  }, INACTIVITY_MS);
 }
 
 client.on("messageCreate", (msg) => {
@@ -122,7 +121,7 @@ client.on("interactionCreate", async (interaction) => {
         ephemeral: true 
       });
       await channel.send(mensajeAdvertencia);
-     } else if (tipo === "tiktok") {
+    } else if (tipo === "tiktok") {
       await interaction.reply({ 
         content: "✅ Mensaje de TikTok enviado.", 
         ephemeral: true 
