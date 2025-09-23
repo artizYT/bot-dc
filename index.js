@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, SlashCommandBuilder } = require("discord.js");
+const { Client, GatewayIntentBits, SlashCommandBuilder, PermissionsBitField } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const express = require("express");
@@ -9,10 +9,9 @@ const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
-const OWNER_ROLE_ID = process.env.OWNER_ROLE_ID;
 const INACTIVITY_MS = parseInt(process.env.INACTIVITY_MS) || 20 * 60 * 1000;
 
-if (!TOKEN || !CHANNEL_ID || !CLIENT_ID || !GUILD_ID || !OWNER_ROLE_ID) {
+if (!TOKEN || !CHANNEL_ID || !CLIENT_ID || !GUILD_ID) {
   process.exit(1);
 }
 
@@ -50,7 +49,9 @@ async function sendBothMessages() {
     if (!channel) throw new Error("Canal no encontrado");
     await channel.send(mensajeMiddleman);
     await channel.send(mensajeTikTok);
-  } catch {}
+  } catch (err) {
+    console.error("Error enviando mensajes automáticos:", err);
+  }
 }
 
 function resetTimer(channelId = CHANNEL_ID) {
@@ -72,47 +73,47 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.commandName !== "alerta") return;
 
   try {
-    const member = await interaction.guild.members.fetch(interaction.user.id);
-    if (!member.roles.cache.has(OWNER_ROLE_ID)) {
-      return interaction.reply({
-        content: "❌ No tienes permisos para usar este comando.",
-        ephemeral: true
-      });
+    if (!interaction.guild) {
+      return interaction.reply({ content: "❌ Este comando solo funciona en servidores.", ephemeral: true });
+    }
+
+    const guild = interaction.guild;
+    const member = await guild.members.fetch(interaction.user.id);
+
+    const isOwner = interaction.user.id === guild.ownerId;
+    const isAdmin = member.permissions ? member.permissions.has(PermissionsBitField.Flags.Administrator) : false;
+
+    if (!isOwner && !isAdmin) {
+      return interaction.reply({ content: "❌ No tienes permisos para usar este comando.", ephemeral: true });
     }
 
     const tipo = interaction.options.getString("tipo");
     const channel = await client.channels.fetch(CHANNEL_ID);
-    if (!channel) throw new Error("Canal no encontrado.");
+    if (!channel) {
+      return interaction.reply({ content: "⚠️ Canal de destino no encontrado.", ephemeral: true });
+    }
 
     if (tipo === "tiktok") {
+      await interaction.reply({ content: "✅ Mensaje de TikTok enviado.", ephemeral: true });
       await channel.send(mensajeTikTok);
-      await interaction.reply({
-        content: "✅ Mensaje de TikTok enviado.",
-        ephemeral: true
-      });
     } else if (tipo === "middleman") {
+      await interaction.reply({ content: "✅ Mensaje de Middleman enviado.", ephemeral: true });
       await channel.send(mensajeMiddleman);
-      await interaction.reply({
-        content: "✅ Mensaje de Middleman enviado.",
-        ephemeral: true
-      });
     } else {
       await interaction.reply({ content: "❌ Tipo no válido.", ephemeral: true });
     }
 
     resetTimer(CHANNEL_ID);
   } catch (err) {
-    console.error(err);
-    if (interaction.deferred || interaction.replied) {
-      await interaction.followUp({
-        content: "⚠️ Error enviando el mensaje.",
-        ephemeral: true
-      });
-    } else {
-      await interaction.reply({
-        content: "⚠️ Error enviando el mensaje.",
-        ephemeral: true
-      });
+    console.error("Error en /alerta:", err);
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.followUp({ content: "⚠️ Error enviando el mensaje.", ephemeral: true });
+      } else {
+        await interaction.reply({ content: "⚠️ Error enviando el mensaje.", ephemeral: true });
+      }
+    } catch (e) {
+      console.error("No se pudo notificar al usuario sobre el error:", e);
     }
   }
 });
@@ -135,9 +136,11 @@ client.once("ready", async () => {
       .toJSON()
   ];
   const rest = new REST({ version: "10" }).setToken(TOKEN);
-  await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-    body: commands
-  });
+  try {
+    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: commands });
+  } catch (err) {
+    console.error("Error registrando comandos:", err);
+  }
   resetTimer(CHANNEL_ID);
   console.log(`✅ Conectado como ${client.user.tag}`);
 });
@@ -145,7 +148,7 @@ client.once("ready", async () => {
 const app = express();
 app.get("/", (req, res) => res.send("Bot activo 🚀"));
 const port = process.env.PORT || 3000;
-app.listen(port);
+app.listen(port, () => console.log(`Web server en puerto ${port}`));
 
 if (process.env.RENDER_EXTERNAL_URL) {
   setInterval(() => {
