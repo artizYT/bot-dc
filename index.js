@@ -26,11 +26,12 @@ const client = new Client({
 const mensajeMiddleman = `
 # 📢 Servicio de Middelman 🛠️ - 🇪🇸
 > ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.***
-**Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
+> **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
 
 # 📢 Middleman Service 🛠️ - 🇺🇸
 > ***On this server we have reliable middlemen so your trades are 100% safe.***
-**Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
+> **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
+> <@&1418601634417606707>
 `;
 
 const mensajeTikTok = `
@@ -39,6 +40,7 @@ https://www.tiktok.com/@venta.brainbrots0 🇪🇸
 
 **Guys, remember to follow us on TikTok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇺🇸
+> <@&1418601634417606707>
 `;
 
 let timers = {};
