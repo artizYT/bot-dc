@@ -33,6 +33,7 @@ const mensajeMiddleman = `
 # 📢 Servicio de Middleman 🛠️ - 🇪🇸
 > ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.***
 > **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
+
 # 📢 Middleman Service 🛠️ - 🇺🇸
 > ***On this server we have reliable middlemen so your trades are 100% safe.***
 > **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
@@ -42,6 +43,7 @@ const mensajeMiddleman = `
 const mensajeTikTok = `
 **Chicos recuerden seguirnos en tiktok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇪🇸
+
 **Guys, remember to follow us on TikTok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 > <@&1418601634417606707>
@@ -56,6 +58,7 @@ const mensajeInventario = `
 # 🗃️ INVENTARIO 🗃️ - :flag_es:
 > Chicos si les interesa algo de <#1419062034586140732> , crean ticket en https://discord.com/channels/1418586395672449107/1419067482450165952. 
 > **En inventario pueden encontrar para comprar o tradear brainbrots**
+
 # 🗃️ INVENTORY 🗃️ - :flag_us:
 > Guys, if you're interested in anything from <#1419062034586140732>, create a ticket at https://discord.com/channels/1418586395672449107/1419067482450165952.
 > **In inventory you can find brainbrots to buy or trade**
@@ -63,6 +66,9 @@ const mensajeInventario = `
 `;
 
 let timers = {};
+
+const commandCooldowns = new Map();
+const COOLDOWN_MS = 3000;
 
 async function sendBothMessages() {
   try {
@@ -105,36 +111,79 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName !== "alerta") return;
 
+  console.log(`📝 Comando /alerta ejecutado por ${interaction.user.tag}`);
+
+  const userId = interaction.user.id;
+  const now = Date.now();
+  const cooldownEnd = commandCooldowns.get(userId) || 0;
+  
+  if (now < cooldownEnd) {
+    const timeLeft = Math.ceil((cooldownEnd - now) / 1000);
+    try {
+      return await interaction.reply({ 
+        content: `⏰ Espera ${timeLeft} segundos antes de usar el comando otra vez.`,
+        flags: 64
+      });
+    } catch (err) {
+      console.log("⚠️ Error enviando mensaje de cooldown");
+    }
+    return;
+  }
+
   const replyOptions = { flags: 64 };
 
   try {
+    if (interaction.replied || interaction.deferred) {
+      console.log("⚠️ Interacción ya procesada anteriormente");
+      return;
+    }
+
+    await interaction.deferReply(replyOptions);
+
+    commandCooldowns.set(userId, now + COOLDOWN_MS);
+
     if (!interaction.guild) {
-      return await interaction.reply({ 
-        content: "❌ Este comando solo funciona en servidores.",
-        ...replyOptions
+      return await interaction.editReply({ 
+        content: "❌ Este comando solo funciona en servidores."
       });
     }
 
     const guild = interaction.guild;
-    const member = await guild.members.fetch(interaction.user.id);
+    let member;
+    
+    try {
+      member = await guild.members.fetch(interaction.user.id);
+    } catch (fetchError) {
+      console.error("❌ Error obteniendo miembro:", fetchError.message);
+      return await interaction.editReply({ 
+        content: "❌ No se pudo verificar tus permisos."
+      });
+    }
 
     const isOwner = interaction.user.id === guild.ownerId;
     const isAdmin = member.permissions ? member.permissions.has(PermissionsBitField.Flags.Administrator) : false;
 
     if (!isOwner && !isAdmin) {
-      return await interaction.reply({ 
-        content: "❌ No tienes permisos para usar este comando.",
-        ...replyOptions
+      return await interaction.editReply({ 
+        content: "❌ No tienes permisos para usar este comando."
       });
     }
 
     const tipo = interaction.options.getString("tipo");
-    const channel = await client.channels.fetch(CHANNEL_ID);
+    
+    let channel;
+    try {
+      channel = await client.channels.fetch(CHANNEL_ID);
+    } catch (channelError) {
+      console.error("❌ Error obteniendo canal:", channelError.message);
+      return await interaction.editReply({ 
+        content: "⚠️ Canal de destino no encontrado."
+      });
+    }
     
     if (!channel || !channel.isTextBased()) {
-      return await interaction.reply({ 
-        content: "⚠️ Canal de destino no encontrado.",
-        ...replyOptions
+      return await interaction.editReply({ 
+        content: "⚠️ Canal de destino no es válido."
       });
     }
 
@@ -159,36 +208,45 @@ client.on("interactionCreate", async (interaction) => {
         respuesta = "✅ Mensaje de Middleman enviado.";
         break;
       default:
-        return await interaction.reply({ 
-          content: "❌ Tipo no válido.",
-          ...replyOptions
+        return await interaction.editReply({ 
+          content: "❌ Tipo no válido."
         });
     }
 
-    await interaction.reply({ 
-      content: respuesta,
-      ...replyOptions
+    try {
+      await channel.send(mensaje);
+      console.log(`✅ Mensaje ${tipo} enviado al canal`);
+    } catch (sendError) {
+      console.error("❌ Error enviando mensaje al canal:", sendError.message);
+      return await interaction.editReply({ 
+        content: "❌ Error enviando el mensaje al canal."
+      });
+    }
+
+    await interaction.editReply({ 
+      content: respuesta
     });
 
-    await channel.send(mensaje);
     resetTimer(CHANNEL_ID);
+    
+    console.log(`✅ Comando /alerta (${tipo}) completado exitosamente`);
 
   } catch (err) {
-    console.error("❌ Error en comando /alerta:", err.message);
+    console.error("❌ Error crítico en comando /alerta:", err.message, err.stack);
     
     try {
-      const errorResponse = { 
-        content: "⚠️ Error procesando el comando.",
-        ...replyOptions
-      };
-
-      if (interaction.deferred || interaction.replied) {
-        await interaction.followUp(errorResponse);
-      } else {
-        await interaction.reply(errorResponse);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ 
+          content: "⚠️ Error procesando el comando.",
+          ...replyOptions
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({ 
+          content: "⚠️ Error procesando el comando."
+        });
       }
-    } catch (followUpError) {
-      console.error("❌ Error enviando respuesta de error:", followUpError.message);
+    } catch (criticalError) {
+      console.error("❌ Error crítico manejando error:", criticalError.message);
     }
   }
 });
@@ -294,6 +352,8 @@ async function gracefulShutdown() {
   Object.values(timers).forEach(timer => {
     if (timer) clearTimeout(timer);
   });
+  
+  commandCooldowns.clear();
   
   if (client && client.readyAt) {
     await client.destroy();
