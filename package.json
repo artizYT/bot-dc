@@ -1,15 +1,16 @@
 {
-  "name": "mi-bot",
+  "name": "discord-alert-bot",
   "version": "1.0.0",
   "main": "index.js",
-  "type": "commonjs",
-  "dependencies": {
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "axios": "^1.7.3"
-  },
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "discord.js": "^14.16.0",
+    "dotenv": "^16.4.5",
+    "@discordjs/rest": "^2.4.0",
+    "discord-api-types": "^0.37.87",
+    "express": "^4.21.2"
   }
 }
