@@ -1,5 +1,11 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, SlashCommandBuilder, PermissionsBitField } = require("discord.js");
+const { 
+  Client, 
+  GatewayIntentBits, 
+  SlashCommandBuilder, 
+  PermissionsBitField,
+  InteractionResponseFlags
+} = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const express = require("express");
@@ -27,6 +33,7 @@ const mensajeMiddleman = `
 # 📢 Servicio de Middelman 🛠️ - 🇪🇸
 > ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.***
 > **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
+
 # 📢 Middleman Service 🛠️ - 🇺🇸
 > ***On this server we have reliable middlemen so your trades are 100% safe.***
 > **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
@@ -36,6 +43,7 @@ const mensajeMiddleman = `
 const mensajeTikTok = `
 **Chicos recuerden seguirnos en tiktok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇪🇸
+
 **Guys, remember to follow us on TikTok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 > <@&1418601634417606707>
@@ -74,7 +82,10 @@ client.on("interactionCreate", async (interaction) => {
 
   try {
     if (!interaction.guild) {
-      return interaction.reply({ content: "❌ Este comando solo funciona en servidores.", ephemeral: true });
+      return interaction.reply({ 
+        content: "❌ Este comando solo funciona en servidores.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
     }
 
     const guild = interaction.guild;
@@ -84,23 +95,38 @@ client.on("interactionCreate", async (interaction) => {
     const isAdmin = member.permissions ? member.permissions.has(PermissionsBitField.Flags.Administrator) : false;
 
     if (!isOwner && !isAdmin) {
-      return interaction.reply({ content: "❌ No tienes permisos para usar este comando.", ephemeral: true });
+      return interaction.reply({ 
+        content: "❌ No tienes permisos para usar este comando.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
     }
 
     const tipo = interaction.options.getString("tipo");
     const channel = await client.channels.fetch(CHANNEL_ID);
     if (!channel) {
-      return interaction.reply({ content: "⚠️ Canal de destino no encontrado.", ephemeral: true });
+      return interaction.reply({ 
+        content: "⚠️ Canal de destino no encontrado.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
     }
 
     if (tipo === "tiktok") {
-      await interaction.reply({ content: "✅ Mensaje de TikTok enviado.", ephemeral: true });
+      await interaction.reply({ 
+        content: "✅ Mensaje de TikTok enviado.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
       await channel.send(mensajeTikTok);
     } else if (tipo === "middleman") {
-      await interaction.reply({ content: "✅ Mensaje de Middleman enviado.", ephemeral: true });
+      await interaction.reply({ 
+        content: "✅ Mensaje de Middleman enviado.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
       await channel.send(mensajeMiddleman);
     } else {
-      await interaction.reply({ content: "❌ Tipo no válido.", ephemeral: true });
+      await interaction.reply({ 
+        content: "❌ Tipo no válido.", 
+        flags: InteractionResponseFlags.Ephemeral 
+      });
     }
 
     resetTimer(CHANNEL_ID);
@@ -108,9 +134,15 @@ client.on("interactionCreate", async (interaction) => {
     console.error("Error en /alerta:", err);
     try {
       if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({ content: "⚠️ Error enviando el mensaje.", ephemeral: true });
+        await interaction.followUp({ 
+          content: "⚠️ Error enviando el mensaje.", 
+          flags: InteractionResponseFlags.Ephemeral 
+        });
       } else {
-        await interaction.reply({ content: "⚠️ Error enviando el mensaje.", ephemeral: true });
+        await interaction.reply({ 
+          content: "⚠️ Error enviando el mensaje.", 
+          flags: InteractionResponseFlags.Ephemeral 
+        });
       }
     } catch (e) {
       console.error("No se pudo notificar al usuario sobre el error:", e);
