@@ -33,7 +33,6 @@ const mensajeMiddleman = `
 # 📢 Servicio de Middleman 🛠️ - 🇪🇸
 > ***En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.***
 > **Se pide a través de tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
-
 # 📢 Middleman Service 🛠️ - 🇺🇸
 > ***On this server we have reliable middlemen so your trades are 100% safe.***
 > **Requested through tickets** https://discord.com/channels/1418586395672449107/1419067482450165952
@@ -43,7 +42,6 @@ const mensajeMiddleman = `
 const mensajeTikTok = `
 **Chicos recuerden seguirnos en tiktok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇪🇸
-
 **Guys, remember to follow us on TikTok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 > <@&1418601634417606707>
@@ -58,10 +56,10 @@ const mensajeInventario = `
 # 🗃️ INVENTARIO 🗃️ - :flag_es:
 > Chicos si les interesa algo de <#1419062034586140732> , crean ticket en https://discord.com/channels/1418586395672449107/1419067482450165952. 
 > **En inventario pueden encontrar para comprar o tradear brainbrots**
-
 # 🗃️ INVENTORY 🗃️ - :flag_us:
 > Guys, if you're interested in anything from <#1419062034586140732>, create a ticket at https://discord.com/channels/1418586395672449107/1419067482450165952.
 > **In inventory you can find brainbrots to buy or trade**
+> <@&1418601634417606707>
 `;
 
 let timers = {};
