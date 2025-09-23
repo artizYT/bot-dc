@@ -54,6 +54,16 @@ const mensajeAdvertencia = `
 > <@&1418601634417606707>
 `;
 
+const mensajeInventario = `
+# 🗃️ INVENTARIO 🗃️ - :flag_es:
+> Chicos si les interesa algo de <#1419062034586140732> , crean ticket en https://discord.com/channels/1418586395672449107/1419067482450165952. 
+> **En inventario pueden encontrar para comprar o tradear brainbrots**
+
+# 🗃️ INVENTORY 🗃️ - :flag_us:
+> Guys, if you're interested in anything from <#1419062034586140732>, create a ticket at https://discord.com/channels/1418586395672449107/1419067482450165952.
+> **In inventory you can find brainbrots to buy or trade**
+`;
+
 let timers = {};
 
 async function sendBothMessages() {
@@ -138,6 +148,10 @@ client.on("interactionCreate", async (interaction) => {
         mensaje = mensajeAdvertencia;
         respuesta = "✅ Mensaje de Advertencia enviado.";
         break;
+      case "inventario":
+        mensaje = mensajeInventario;
+        respuesta = "✅ Mensaje de Inventario enviado.";
+        break;
       case "tiktok":
         mensaje = mensajeTikTok;
         respuesta = "✅ Mensaje de TikTok enviado.";
@@ -196,7 +210,8 @@ client.once("clientReady", async (readyClient) => {
           .addChoices(
             { name: "TikTok", value: "tiktok" },
             { name: "Middleman", value: "middleman" },
-            { name: "Advertencia", value: "advertencia" }
+            { name: "Advertencia", value: "advertencia" },
+            { name: "Inventario", value: "inventario" }
           )
       )
       .toJSON()
