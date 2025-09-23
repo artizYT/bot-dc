@@ -5,9 +5,8 @@ const axios = require("axios");
 
 const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
-const TIKTOK_CHANNEL_ID = process.env.TIKTOK_CHANNEL_ID;
 
-if (!TOKEN || !CHANNEL_ID || !TIKTOK_CHANNEL_ID) {
+if (!TOKEN || !CHANNEL_ID) {
   process.exit(1);
 }
 
@@ -30,10 +29,10 @@ const mensajeMiddleman = `
 `;
 
 const mensajeTikTok = `
-**Chicos recuerden seguirnos en tiktok:**  
+**Chicos recuerden seguirnos en tiktok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇪🇸
 
-**Guys, remember to follow us on TikTok:**  
+**Guys, remember to follow us on TikTok:**    
 https://www.tiktok.com/@venta.brainbrots0 🇺🇸
 `;
 
@@ -47,19 +46,12 @@ client.on("messageCreate", (msg) => {
     timers[CHANNEL_ID] = setTimeout(async () => {
       try {
         const channel = await client.channels.fetch(CHANNEL_ID);
-        if (channel) await channel.send(mensajeMiddleman);
+        if (channel) {
+          await channel.send(mensajeMiddleman);
+          await channel.send(mensajeTikTok);
+        }
       } catch {}
-    }, 10 * 60 * 1000); // 10 minutos
-  }
-
-  if (msg.channelId === TIKTOK_CHANNEL_ID) {
-    clearTimeout(timers[TIKTOK_CHANNEL_ID]);
-    timers[TIKTOK_CHANNEL_ID] = setTimeout(async () => {
-      try {
-        const channelTik = await client.channels.fetch(TIKTOK_CHANNEL_ID);
-        if (channelTik) await channelTik.send(mensajeTikTok);
-      } catch {}
-    }, 20 * 60 * 1000); // 20 minutos
+    }, 20 * 60 * 1000);
   }
 });
 
