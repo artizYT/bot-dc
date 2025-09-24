@@ -10,7 +10,6 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const GUILD_ID = process.env.GUILD_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const INACTIVITY_MS = parseInt(process.env.INACTIVITY_MS) || 20 * 60 * 1000;
-const alertaCooldowns = new Map();
 const SPAM_THRESHOLD = 2;
 const SPAM_WINDOW = 1000;
 const MUTE_DURATION = 60 * 1000;
@@ -565,15 +564,7 @@ async function handleUnbanCommand(interaction) {
   }
 }
 
-function isOnCooldown(alertaId) {
-  const lastUsed = alertaCooldowns.get(alertaId);
-  if (!lastUsed) return false;
-  return Date.now() - lastUsed < 15 * 60 * 1000; // 15 minutos
-}
 
-function setCooldown(alertaId) {
-  alertaCooldowns.set(alertaId, Date.now());
-}
 
 async function handleAlertaCommand(interaction) {
   try {
