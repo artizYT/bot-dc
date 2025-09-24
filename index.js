@@ -139,17 +139,6 @@ const mensajesEmbeds = {
   inventario: createInventarioEmbed
 };
 
-const keywordTriggers = {
-  'trada': 'middleman',
-  'trade': 'middleman',
-  'trading': 'middleman',
-  'middleman': 'middleman',
-  'server': 'advertencia',
-  'servidor': 'advertencia',
-  'link': 'advertencia',
-  'enlace': 'advertencia'
-};
-
 let timers = {};
 
 function getRandomDelay(min = 2000, max = 8000) {
@@ -1012,20 +1001,6 @@ client.on("messageCreate", async (msg) => {
       console.error(`Error manejando spam: ${err.message}`);
     }
     return;
-  }
-
-  const content = msg.content.toLowerCase();
-  for (const [keyword, messageType] of Object.entries(keywordTriggers)) {
-    if (content.includes(keyword)) {
-      if (canUserTriggerMessage(msg.author.id, messageType)) {
-        if (msg.channelId === CHANNEL_ID || hasPermission(msg.member, msg.guild.id, "alerta")) {
-          setTimeout(async () => {
-            await sendMessage(msg.channelId, mensajesEmbeds[messageType]);
-          }, getRandomDelay(2000, 5000));
-        }
-      }
-      break;
-    }
   }
 
   if (msg.channelId === CHANNEL_ID) {
