@@ -14,7 +14,7 @@ const INACTIVITY_MS = parseInt(process.env.INACTIVITY_MS) || 20 * 60 * 1000;
 const SPAM_THRESHOLD = 2;
 const SPAM_WINDOW = 1000;
 const MUTE_DURATION = 60 * 1000;
-
+const alertasDisponibles = [1, 2, 3, 4, 5];
 if (!TOKEN || !CHANNEL_ID || !CLIENT_ID || !GUILD_ID) {
   console.error("❌ Variables de entorno faltantes");
   process.exit(1);
@@ -566,40 +566,49 @@ async function handleUnbanCommand(interaction) {
 }
 
 async function handleAlertaCommand(interaction) {
-  const userId = interaction.user.id;
-  const now = Date.now();
-  const cooldownEnd = commandCooldowns.get(userId) || 0;
+  try {
+    const alertaId = interaction.options.getInteger("id");
+    const user = interaction.member;
 
-  if (now < cooldownEnd) {
-    return await interaction.reply({
-      content: `⏰ Espera ${Math.ceil((cooldownEnd - now) / 1000)}s antes de usar este comando.`,
-      flags: 64
+    if (
+      !user.permissions.has(PermissionsBitField.Flags.ManageMessages) &&
+      !user.permissions.has(PermissionsBitField.Flags.Administrator)
+    ) {
+      return interaction.reply({
+        content: "❌ No tienes permiso para usar este comando.",
+        ephemeral: true,
+      });
+    }
+
+    if (isOnCooldown(alertaId)) {
+      return interaction.reply({
+        content: `⚠️ La alerta ${alertaId} está en cooldown. Espera 15 minutos antes de volver a usarla.`,
+        ephemeral: true,
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📢 Alerta ${alertaId}`)
+      .setDescription(`Contenido de la alerta **${alertaId}**.`)
+      .setColor("Red")
+      .setTimestamp();
+
+    await interaction.channel.send({ embeds: [embed] });
+    setCooldown(alertaId);
+
+    await interaction.reply({
+      content: `✅ La alerta ${alertaId} fue enviada con éxito.`,
+      ephemeral: true,
     });
+  } catch (err) {
+    console.error("Error en handleAlertaCommand:", err);
+    if (!interaction.replied) {
+      interaction.reply({
+        content: "❌ Ocurrió un error al enviar la alerta.",
+        ephemeral: true,
+      });
+    }
   }
-
-  await interaction.deferReply({ flags: 64 });
-  commandCooldowns.set(userId, now + COOLDOWN_MS);
-
-  if (!interaction.guild) {
-    return await interaction.editReply({ content: "❌ Este comando solo funciona en servidores." });
-  }
-
-  const guild = interaction.guild;
-  const member = await guild.members.fetch(interaction.user.id);
-
-  if (!hasPermission(member, guild.id, "alerta")) {
-    return await interaction.editReply({ content: "❌ No tienes permisos para usar este comando." });
-  }
-
-  const tipo = interaction.options.getString("tipo");
-
-  if (!mensajesEmbeds[tipo]) {
-    return await interaction.editReply({ content: "❌ Tipo de alerta inválido." });
-  }
-
-  await sendMessage(CHANNEL_ID, mensajesEmbeds[tipo], getRandomDelay(1000, 3000));
-  await interaction.editReply({ content: "✅ Mensaje de alerta enviado correctamente." });
-  resetTimer(CHANNEL_ID);
 }
 
 async function handleSorteoCommand(interaction) {
@@ -1262,38 +1271,30 @@ client.once("ready", async (readyClient) => {
   console.log(`   • Gestión de permisos por roles`);
 });
 
+async function sendRandomAlert(channel) {
+  try {
+    const disponibles = alertasDisponibles.filter((id) => !isOnCooldown(id));
+    if (disponibles.length === 0) return;
+
+    const randomId = disponibles[Math.floor(Math.random() * disponibles.length)];
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📢 Alerta ${randomId}`)
+      .setDescription(`Contenido automático de la alerta **${randomId}**.`)
+      .setColor("Orange")
+      .setTimestamp();
+
+    await channel.send({ embeds: [embed] });
+    setCooldown(randomId);
+  } catch (err) {
+    console.error("Error enviando alerta automática:", err);
+  }
+}
+
 setInterval(() => {
-  const now = Date.now();
-
-  for (const [userId, messages] of userMessages.entries()) {
-    const validMessages = messages.filter(msg => now - msg.timestamp < 5 * 60 * 1000);
-    if (validMessages.length === 0) {
-      userMessages.delete(userId);
-    } else {
-      userMessages.set(userId, validMessages);
-    }
-  }
-
-  for (const [userId, muteEnd] of mutedUsers.entries()) {
-    if (now > muteEnd) {
-      mutedUsers.delete(userId);
-    }
-  }
-
-  for (const [key, cooldownEnd] of commandCooldowns.entries()) {
-    if (now > cooldownEnd) {
-      commandCooldowns.delete(key);
-    }
-  }
-
-  for (const [key, lastTrigger] of userTriggerCooldowns.entries()) {
-    if (now - lastTrigger > USER_TRIGGER_COOLDOWN) {
-      userTriggerCooldowns.delete(key);
-    }
-  }
-
-  console.log("🧹 Limpieza de datos completada");
-}, 60 * 60 * 1000);
+  const channel = client.channels.cache.get(process.env.CHANNEL_ID);
+  if (channel) sendRandomAlert(channel);
+}, 30 * 60 * 1000);
 
 const app = express();
 
