@@ -1198,15 +1198,15 @@ client.once("ready", async (readyClient) => {
         .setName("estafador")
         .setDescription("Reportar una estafa: datos del estafador, víctima, pruebas y perfil Roblox")
         .addStringOption(option =>
+          option.setName("que_estafó")
+            .setDescription("Qué fue lo estafado (ej: Robux, item X)")
+            .setRequired(true)) // primero la requerida
+        .addStringOption(option =>
           option.setName("roblox_url")
             .setDescription("URL del perfil de Roblox del estafador (opcional)"))
         .addStringOption(option =>
           option.setName("descripcion")
             .setDescription("Descripción del caso (opcional)"))
-        .addStringOption(option =>
-          option.setName("que_estafó")
-            .setDescription("Qué fue lo estafado (ej: Robux, item X)")
-            .setRequired(true))
         .addUserOption(option =>
           option.setName("victima")
             .setDescription("Víctima (mención Discord)"))
