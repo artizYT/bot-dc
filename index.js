@@ -815,7 +815,9 @@ client.on("interactionCreate", async (interaction) => {
     }
   } catch (err) {
     console.error(`Error manejando interacción: ${err.message}`);
-    if (!interaction.replied && !interaction.deferred) {
+    if (interaction.deferred && !interaction.replied) {
+      await interaction.editReply({ content: "⚠️ Error procesando el comando." });
+    } else if (!interaction.deferred && !interaction.replied) {
       await interaction.reply({ content: "⚠️ Error procesando el comando.", flags: 64 });
     }
   }
