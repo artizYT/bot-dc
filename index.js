@@ -1116,6 +1116,9 @@ client.on("interactionCreate", async (interaction) => {
       case "extender":
         await handleExtenderCommand(interaction);
         break;
+      case "estafador":
+        await handleEstafadorCommand(interaction);
+        break;
       case "control-sorteo":
         await handleControlSorteoCommand(interaction);
         break;
@@ -1195,37 +1198,37 @@ client.once("ready", async (readyClient) => {
           .setDescription("URL de imagen del premio (jpg/png/gif/webp)"))
       .toJSON(),
       new SlashCommandBuilder()
-      .setName("estafador")
-      .setDescription("Reportar una estafa: datos del estafador, víctima, pruebas y perfil Roblox")
-      .addStringOption(option =>
-        option.setName("que_estafó")
-          .setDescription("Qué fue lo estafado (ej: Robux, item X)")
-          .setRequired(true))
-      .addUserOption(option =>
-        option.setName("victima")
-          .setDescription("Víctima (mención Discord)"))
-      .addUserOption(option =>
-        option.setName("estafador_discord")
-          .setDescription("Estafador (mención Discord si aplica)"))
-      .addStringOption(option =>
-        option.setName("estafador_id")
-          .setDescription("ID o nombre del estafador si no está en Discord (ej: id Roblox)"))
-      .addStringOption(option =>
-        option.setName("roblox_url")
-          .setDescription("URL del perfil de Roblox del reportante (opcional)"))
-      .addStringOption(option =>
-        option.setName("roblox_url_estafador")
-          .setDescription("URL Roblox del estafador (opcional)"))
-      .addStringOption(option =>
-        option.setName("descripcion")
-          .setDescription("Descripción del caso (opcional)"))
-      .addAttachmentOption(option =>
-        option.setName("prueba")
-          .setDescription("Adjunta una imagen como prueba (opcional)"))
-      .addStringOption(option =>
-        option.setName("imagenes_urls")
-          .setDescription("URLs adicionales de imágenes separadas por espacios (opcional)"))
-      .toJSON(),
+        .setName("estafador")
+        .setDescription("Reportar una estafa: datos del estafador, víctima, pruebas y perfil Roblox")
+        .addStringOption(option =>
+          option.setName("que_estafó")
+            .setDescription("Qué fue lo estafado (ej: Robux, item X)")
+            .setRequired(true)) // primero la requerida
+        .addStringOption(option =>
+          option.setName("roblox_url")
+            .setDescription("URL del perfil de Roblox del estafador (opcional)"))
+        .addStringOption(option =>
+          option.setName("descripcion")
+            .setDescription("Descripción del caso (opcional)"))
+        .addUserOption(option =>
+          option.setName("victima")
+            .setDescription("Víctima (mención Discord)"))
+        .addUserOption(option =>
+          option.setName("estafador_discord")
+            .setDescription("Estafador (mención Discord si aplica)"))
+        .addStringOption(option =>
+          option.setName("estafador_id")
+            .setDescription("ID o nombre del estafador si no está en Discord (ej: id Roblox)"))
+        .addStringOption(option =>
+          option.setName("roblox_url_estafador")
+            .setDescription("URL Roblox del estafador (opcional)"))
+        .addAttachmentOption(option =>
+          option.setName("prueba")
+            .setDescription("Adjunta una imagen como prueba (opcional)"))
+        .addStringOption(option =>
+          option.setName("imagenes_urls")
+            .setDescription("URLs adicionales de imágenes separadas por espacios (opcional)"))
+        .toJSON(),
     new SlashCommandBuilder()
       .setName("extender")
       .setDescription("Extender la duración de un sorteo")
