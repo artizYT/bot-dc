@@ -104,7 +104,7 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
             { name: "🎫 Tickets", value: data.url, inline: false }
           )
-          .setThumbnail("https://png.pngtree.com/png-clipart/20230818/original/pngtree-lock-icon-protection-padlock-safety-picture-image_8026948.png")
+          .setThumbnail("https://static.vecteezy.com/system/resources/previews/018/931/005/original/icon-of-lock-lock-sign-and-symbol-locked-padlock-icon-png.png")
           .setFooter({ text: "🛡️ Tradeos seguros • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
