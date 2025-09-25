@@ -446,7 +446,6 @@ async function handleAlertaCommand(interaction) {
       .setTimestamp();
     return await interaction.editReply({ embeds: [errorEmbed] });
   }
-
   const guild = interaction.guild;
   const member = await guild.members.fetch(interaction.user.id);
   if (!hasPermission(member, guild.id, "alerta")) {
@@ -624,7 +623,7 @@ async function handleExtenderCommand(interaction) {
         .setTimestamp();
       return await interaction.editReply({ embeds: [errorEmbed] });
     }
-  }
+  
   const guild = interaction.guild;
   const member = await guild.members.fetch(interaction.user.id);
   if (!hasPermission(member, guild.id, "extender")) {
@@ -729,6 +728,7 @@ async function handleExtenderCommand(interaction) {
       .setFooter({ text: "Error interno" })
       .setTimestamp();
     await interaction.editReply({ embeds: [errorEmbed] });
+    }
   }
 
 async function handleControlSorteoCommand(interaction) {
@@ -1279,11 +1279,11 @@ client.login(TOKEN).catch(err => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception thrown:', err);
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception thrown:", err);
   process.exit(1);
 });
