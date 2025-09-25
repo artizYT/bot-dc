@@ -123,18 +123,18 @@ async function sendDecoratedMessage(channelId, tipo) {
           .setTimestamp();
         break;
 
-      case "  ":
-        embed = new EmbedBuilder()
-          .setTitle(data.title)
-          .setColor(0xFFD700)
-          .addFields(
-            { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
-            { name: "🇺🇸 English", value: data.descriptionEN, inline: false }
-          )
-          .setThumbnail("https://tse2.mm.bing.net/th/id/OIP.2rPduvfYm81qzfyOyVUNQQHaHa?rs=1&pid=ImgDetMain&o=7&rm=3")
-          .setFooter({ text: "⚠️ Mantente seguro • " + new Date().toLocaleString("es-ES") })
-          .setTimestamp();
-        break;
+      case "advertencia":
+      embed = new EmbedBuilder()
+        .setTitle(data.title)
+        .setColor(0xFFD700)
+        .addFields(
+          { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
+          { name: "🇺🇸 English", value: data.descriptionEN, inline: false }
+        )
+        .setThumbnail("https://tse2.mm.bing.net/th/id/OIP.2rPduvfYm81qzfyOyVUNQQHaHa?rs=1&pid=ImgDetMain&o=7&rm=3")
+        .setFooter({ text: "⚠️ Mantente seguro • " + new Date().toLocaleString("es-ES") })
+        .setTimestamp();
+      break;
 
       case "inventario":
         embed = new EmbedBuilder()
