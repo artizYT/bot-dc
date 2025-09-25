@@ -678,10 +678,6 @@ async function handleEstafadorCommand(interaction) {
 
     await interaction.editReply({ content: "✅ Denuncia enviada correctamente al canal principal." });
     resetTimer(CHANNEL_ID);
-  } catch (err) {
-    console.error("Error enviando denuncia de estafa:", err);
-    await interaction.editReply({ content: "⚠️ Error al enviar la denuncia. Revisa logs del bot." });
-  }
 }
 
 
