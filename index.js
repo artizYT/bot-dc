@@ -104,7 +104,7 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
             { name: "🎫 Tickets", value: data.url, inline: false }
           )
-          .setThumbnail("https://i.imgur.com/shield-icon.png")
+          .setThumbnail("https://png.pngtree.com/png-clipart/20230818/original/pngtree-lock-icon-protection-padlock-safety-picture-image_8026948.png")
           .setFooter({ text: "🛡️ Tradeos seguros • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
@@ -118,12 +118,12 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
             { name: "🔗 Enlace", value: data.url, inline: false }
           )
-          .setThumbnail("https://i.imgur.com/tiktok-icon.png")
+          .setThumbnail("https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png")
           .setFooter({ text: "📱 Síguenos • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
 
-      case "advertencia":
+      case "  ":
         embed = new EmbedBuilder()
           .setTitle(data.title)
           .setColor(0xFFD700)
@@ -131,7 +131,7 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false }
           )
-          .setThumbnail("https://i.imgur.com/warning-icon.png")
+          .setThumbnail("https://tse2.mm.bing.net/th/id/OIP.2rPduvfYm81qzfyOyVUNQQHaHa?rs=1&pid=ImgDetMain&o=7&rm=3")
           .setFooter({ text: "⚠️ Mantente seguro • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
@@ -145,7 +145,7 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
             { name: "📁 Canal", value: data.channel, inline: false }
           )
-          .setThumbnail("https://i.imgur.com/inventory-icon.png")
+          .setThumbnail("https://static.vecteezy.com/system/resources/previews/015/337/695/non_2x/shopping-cart-icon-free-png.png")
           .setFooter({ text: "📦 Productos disponibles • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
