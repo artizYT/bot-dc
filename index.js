@@ -88,16 +88,23 @@ async function sendDecoratedMessage(channelId, tipo) {
     const channel = await client.channels.fetch(channelId);
     if (!channel || !channel.isTextBased()) return;
     const data = mensajes[tipo];
+
     const embed = new EmbedBuilder()
       .setTitle(data.title)
-      .setDescription(`${data.descriptionES}\n\n${data.descriptionEN}`)
-      .setColor(0x2F3136)
+      .setColor(0xFF0000) // rojo
+      .addFields(
+        { name: "🇪🇸 Español", value: data.descriptionES || "N/A" },
+        { name: "🇺🇸 English", value: data.descriptionEN || "N/A" }
+      )
+      .setFooter({ text: "📌 Mensaje automático del servidor" })
       .setTimestamp();
+
     await channel.send({ embeds: [embed] });
   } catch (err) {
     console.error(`Error enviando mensaje decorado: ${err.message}`);
   }
 }
+
 
 async function sendMessage(channelId, message, delay = 0) {
   try {
@@ -665,12 +672,21 @@ async function handleBanCommand(interaction) {
   }
   try {
     await guild.members.ban(target.id, { reason });
-    const logEmbed = new EmbedBuilder()
-      .setTitle("🔨 Usuario Baneado")
-      .setDescription(`**Usuario:** ${target.tag} (${target.id})\n**Moderador:** ${interaction.user}\n**Razón:** ${reason}${durationMs ? `\n**Duración:** ${durationStr}` : ""}`)
-      .setColor(0xFF0000)
+    const embed = new EmbedBuilder()
+      .setTitle("🔨 USUARIO BANEADO")
+      .setColor(0xFF0000) // rojo
+      .setThumbnail(target.displayAvatarURL({ dynamic: true }))
+      .addFields(
+        { name: "👤 Usuario", value: `${target} (${target.tag})`, inline: true },
+        { name: "🛡️ Moderador", value: `${interaction.user}`, inline: true },
+        { name: "⏰ Duración", value: durationStr || "Permanente", inline: true },
+        { name: "📄 Razón", value: reason || "No especificada" }
+      )
+      .setFooter({ text: `ID: ${target.id} • ${new Date().toLocaleString("es-ES")}` })
       .setTimestamp();
-    await interaction.channel.send({ embeds: [logEmbed] });
+
+    await interaction.channel.send({ embeds: [embed] });
+
     await interaction.editReply({ content: `✅ Usuario ${target.tag} baneado correctamente.` });
     if (durationMs) {
       const timeoutId = setTimeout(async () => {
@@ -708,12 +724,18 @@ async function handleUnbanCommand(interaction) {
       const fetched = await client.users.fetch(userId);
       userTag = fetched.tag;
     } catch {}
-    const logEmbed = new EmbedBuilder()
-      .setTitle("✅ Usuario Desbaneado")
-      .setDescription(`**Usuario:** ${userTag} (${userId})\n**Moderador:** ${interaction.user}\n**Razón:** ${reason}`)
-      .setColor(0x00FF00)
+    const embed = new EmbedBuilder()
+      .setTitle("✅ USUARIO DESBANEADO")
+      .setColor(0xFF0000) // rojo igual para mantener estilo
+      .addFields(
+        { name: "👤 Usuario", value: `${userId}`, inline: true },
+        { name: "🛡️ Moderador", value: `${interaction.user}`, inline: true },
+        { name: "📄 Razón", value: reason || "No especificada" }
+      )
+      .setFooter({ text: `ID: ${userId} • ${new Date().toLocaleString("es-ES")}` })
       .setTimestamp();
-    await interaction.channel.send({ embeds: [logEmbed] });
+
+    await interaction.channel.send({ embeds: [embed] });
     await interaction.editReply({ content: `✅ Usuario ${userTag} desbaneado correctamente.` });
   } catch (err) {
     console.error(`Error desbaneando usuario: ${err.message}`);
@@ -838,16 +860,16 @@ client.once("ready", async (readyClient) => {
         option.setName("descripcion")
           .setDescription("Descripción del sorteo")
           .setRequired(true))
-      .addStringOption(option =>
-        option.setName("duracion")
-          .setDescription("Duración (ej: 1D 2H 30Min 45S 1Mes)")
-          .setRequired(true)) // <-- ahora va antes de los opcionales
       .addAttachmentOption(option =>
         option.setName("imagen")
           .setDescription("Imagen del premio (archivo)"))
       .addStringOption(option =>
         option.setName("imagen_url")
           .setDescription("URL de imagen del premio (jpg/png/gif/webp)"))
+      .addStringOption(option =>
+        option.setName("duracion")
+          .setDescription("Duración (ej: 1D 2H 30Min 45S 1Mes)")
+          .setRequired(true))
       .toJSON(),
     new SlashCommandBuilder()
       .setName("extender")
