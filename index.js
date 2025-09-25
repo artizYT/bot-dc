@@ -12,7 +12,7 @@ const CHANNEL_ID = process.env.CHANNEL_ID;
 const INACTIVITY_MS = parseInt(process.env.INACTIVITY_MS) || 20 * 60 * 1000;
 
 if (!TOKEN || !CHANNEL_ID || !CLIENT_ID || !GUILD_ID) {
-  console.error("❌ Variables de entorno faltantes");
+  console.error("⚠️ Variables de entorno faltantes");
   process.exit(1);
 }
 
@@ -42,24 +42,27 @@ const AUTO_MESSAGE_MAX_INTERVAL = 15 * 60 * 1000;
 
 const mensajes = {
   middleman: {
-    title: "📢 Servicio de Middleman 🛠️",
-    descriptionES: "En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.\nPide a través de tickets: https://discord.com/channels/1418586395672449107/1419067482450165952",
-    descriptionEN: "On this server we have reliable middlemen so your trades are 100% safe.\nRequested through tickets: https://discord.com/channels/1418586395672449107/1419067482450165952"
+    title: "🛡️ Servicio de Middleman Confiable",
+    descriptionES: "En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.\nPide a través de tickets:",
+    descriptionEN: "On this server we have reliable middlemen so your trades are 100% safe.\nRequested through tickets:",
+    url: "https://discord.com/channels/1418586395672449107/1419067482450165952"
   },
   tiktok: {
-    title: "🎵 Síguenos en TikTok",
-    descriptionES: "https://www.tiktok.com/@venta.brainbrots0 🇪🇸",
-    descriptionEN: "https://www.tiktok.com/@venta.brainbrots0 🇺🇸"
+    title: "📱 Síguenos en TikTok",
+    descriptionES: "¡No te pierdas nuestro contenido exclusivo en TikTok!",
+    descriptionEN: "Don't miss our exclusive content on TikTok!",
+    url: "https://www.tiktok.com/@venta.brainbrots0"
   },
   advertencia: {
-    title: "🚨 Advertencia",
-    descriptionES: "Recuerden no unirse a links de desconocidos.",
-    descriptionEN: "Remember not to join unknown links."
+    title: "⚠️ Advertencia de Seguridad",
+    descriptionES: "Recuerden no unirse a links de desconocidos por su seguridad.",
+    descriptionEN: "Remember not to join unknown links for your safety."
   },
   inventario: {
-    title: "🗃️ INVENTARIO",
-    descriptionES: "Si les interesa algo de <#1419062034586140732>, creen ticket: https://discord.com/channels/1418586395672449107/1419067482450165952",
-    descriptionEN: "If you're interested in something from <#1419062034586140732>, create a ticket."
+    title: "📦 Inventario Disponible",
+    descriptionES: "Revisa nuestros productos disponibles y crea un ticket si algo te interesa:",
+    descriptionEN: "Check our available products and create a ticket if something interests you:",
+    channel: "<#1419062034586140732>"
   }
 };
 
@@ -89,25 +92,71 @@ async function sendDecoratedMessage(channelId, tipo) {
     if (!channel || !channel.isTextBased()) return;
     const data = mensajes[tipo];
 
-    const embed = new EmbedBuilder()
-      .setTitle("✅ USUARIO DESBANEADO")
-      .setColor(0xFF0000)
-      .setThumbnail(avatarURL || "https://i.imgur.com/Qr0ZpWQ.png")
-      .addFields(
-        { name: "👤 Usuario", value: `${userTag} (${userId})`, inline: true },
-        { name: "🛡️ Moderador", value: `${interaction.user}`, inline: true },
-        { name: "📄 Razón", value: reason || "No especificada" }
-      )
-      .setFooter({ text: `ID: ${userId} • ${new Date().toLocaleString("es-ES")}` })
-      .setTimestamp();
+    let embed;
+    
+    switch (tipo) {
+      case "middleman":
+        embed = new EmbedBuilder()
+          .setTitle(data.title)
+          .setColor(0x5865F2)
+          .addFields(
+            { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
+            { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
+            { name: "🎫 Tickets", value: data.url, inline: false }
+          )
+          .setThumbnail("https://i.imgur.com/shield-icon.png")
+          .setFooter({ text: "🛡️ Tradeos seguros • " + new Date().toLocaleString("es-ES") })
+          .setTimestamp();
+        break;
 
-    await interaction.channel.send({ embeds: [embed] });
+      case "tiktok":
+        embed = new EmbedBuilder()
+          .setTitle(data.title)
+          .setColor(0xFF0050)
+          .addFields(
+            { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
+            { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
+            { name: "🔗 Enlace", value: data.url, inline: false }
+          )
+          .setThumbnail("https://i.imgur.com/tiktok-icon.png")
+          .setFooter({ text: "📱 Síguenos • " + new Date().toLocaleString("es-ES") })
+          .setTimestamp();
+        break;
+
+      case "advertencia":
+        embed = new EmbedBuilder()
+          .setTitle(data.title)
+          .setColor(0xFFD700)
+          .addFields(
+            { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
+            { name: "🇺🇸 English", value: data.descriptionEN, inline: false }
+          )
+          .setThumbnail("https://i.imgur.com/warning-icon.png")
+          .setFooter({ text: "⚠️ Mantente seguro • " + new Date().toLocaleString("es-ES") })
+          .setTimestamp();
+        break;
+
+      case "inventario":
+        embed = new EmbedBuilder()
+          .setTitle(data.title)
+          .setColor(0x00D166)
+          .addFields(
+            { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
+            { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
+            { name: "📁 Canal", value: data.channel, inline: false }
+          )
+          .setThumbnail("https://i.imgur.com/inventory-icon.png")
+          .setFooter({ text: "📦 Productos disponibles • " + new Date().toLocaleString("es-ES") })
+          .setTimestamp();
+        break;
+    }
+
+    await channel.send({ embeds: [embed] });
 
   } catch (err) {
     console.error(`Error enviando mensaje decorado: ${err.message}`);
   }
 }
-
 
 async function sendMessage(channelId, message, delay = 0) {
   try {
@@ -294,7 +343,15 @@ async function cancelGiveaway(messageId) {
       .setImage(embed.image?.url)
       .setFooter({ text: "Sorteo cancelado • " + new Date().toLocaleString('es-ES') });
     await message.edit({ embeds: [cancelledEmbed] });
-    await channel.send(`❌ Sorteo **${giveaway.objeto}** cancelado por administrador.`);
+    
+    const cancelEmbed = new EmbedBuilder()
+      .setTitle("❌ Sorteo Cancelado")
+      .setDescription(`El sorteo **${giveaway.objeto}** ha sido cancelado por un administrador.`)
+      .setColor(0xFF0000)
+      .setFooter({ text: "Sorteo cancelado • " + new Date().toLocaleString('es-ES') })
+      .setTimestamp();
+    
+    await channel.send({ embeds: [cancelEmbed] });
     activeSorteos.delete(messageId);
     return true;
   } catch (err) {
@@ -312,23 +369,42 @@ async function endGiveaway(messageId) {
     const message = await channel.messages.fetch(messageId);
     const reaction = message.reactions.cache.get(GIVEAWAY_EMOJI);
     if (!reaction) {
-      await channel.send(`🎉 Sorteo **${giveaway.objeto}** terminado\n❌ Sin participantes válidos.`);
+      const noParticipantsEmbed = new EmbedBuilder()
+        .setTitle("🎉 Sorteo Terminado")
+        .setDescription(`**Premio:** ${giveaway.objeto}\n❌ **Sin participantes válidos**`)
+        .setColor(0xFF6B35)
+        .setFooter({ text: "Sorteo terminado • " + new Date().toLocaleString('es-ES') })
+        .setTimestamp();
+      
+      await channel.send({ embeds: [noParticipantsEmbed] });
       activeSorteos.delete(messageId);
       return;
     }
     const users = await reaction.users.fetch();
     const participants = users.filter(u => !u.bot);
     if (participants.size === 0) {
-      await channel.send(`🎉 Sorteo **${giveaway.objeto}** terminado\n❌ Sin participantes válidos.`);
+      const noParticipantsEmbed = new EmbedBuilder()
+        .setTitle("🎉 Sorteo Terminado")
+        .setDescription(`**Premio:** ${giveaway.objeto}\n❌ **Sin participantes válidos**`)
+        .setColor(0xFF6B35)
+        .setFooter({ text: "Sorteo terminado • " + new Date().toLocaleString('es-ES') })
+        .setTimestamp();
+      
+      await channel.send({ embeds: [noParticipantsEmbed] });
       activeSorteos.delete(messageId);
       return;
     }
     const winner = participants.random();
     const winnerEmbed = new EmbedBuilder()
       .setTitle("🎉 ¡SORTEO TERMINADO!")
-      .setDescription(`**Ganador:** ${winner}\n**Premio:** ${giveaway.objeto}`)
+      .setDescription(`🏆 **Ganador:** ${winner}\n🎁 **Premio:** ${giveaway.objeto}`)
       .setColor(0x00FF00)
-      .setFooter({ text: `Participantes: ${participants.size}` })
+      .setThumbnail(winner.displayAvatarURL({ dynamic: true }))
+      .addFields(
+        { name: "👥 Participantes", value: `${participants.size}`, inline: true },
+        { name: "🎯 Organizador", value: `<@${giveaway.createdBy}>`, inline: true }
+      )
+      .setFooter({ text: `ID del ganador: ${winner.id} • ${new Date().toLocaleString('es-ES')}` })
       .setTimestamp();
     await channel.send({ embeds: [winnerEmbed] });
     const embed = message.embeds[0];
@@ -351,24 +427,59 @@ async function handleAlertaCommand(interaction) {
   const now = Date.now();
   const cooldownEnd = commandCooldowns.get(userId) || 0;
   if (now < cooldownEnd) {
-    return await interaction.reply({ content: `⏰ Espera ${Math.ceil((cooldownEnd - now) / 1000)}s antes de usar este comando.`, flags: 64 });
+    const cooldownEmbed = new EmbedBuilder()
+      .setTitle("⏰ Cooldown Activo")
+      .setDescription(`Espera ${Math.ceil((cooldownEnd - now) / 1000)} segundos antes de usar este comando.`)
+      .setColor(0xFFD700)
+      .setFooter({ text: "Sistema de cooldown" })
+      .setTimestamp();
+    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(userId, now + COOLDOWN_MS);
   if (!interaction.guild) {
-    return await interaction.editReply({ content: "❌ Este comando solo funciona en servidores." });
+    const errorEmbed = new EmbedBuilder()
+      .setTitle("❌ Error de Servidor")
+      .setDescription("Este comando solo funciona en servidores.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de contexto" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [errorEmbed] });
   }
+
   const guild = interaction.guild;
   const member = await guild.members.fetch(interaction.user.id);
   if (!hasPermission(member, guild.id, "alerta")) {
-    return await interaction.editReply({ content: "❌ No tienes permisos para usar este comando." });
+    const permissionEmbed = new EmbedBuilder()
+      .setTitle("🚫 Sin Permisos")
+      .setDescription("No tienes permisos para usar este comando.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Permisos insuficientes" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [permissionEmbed] });
   }
   const tipo = interaction.options.getString("tipo");
   if (!mensajes[tipo]) {
-    return await interaction.editReply({ content: "❌ Tipo de alerta inválido." });
+    const invalidEmbed = new EmbedBuilder()
+      .setTitle("❌ Tipo Inválido")
+      .setDescription("Tipo de alerta inválido.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de validación" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [invalidEmbed] });
   }
   await sendDecoratedMessage(CHANNEL_ID, tipo);
-  await interaction.editReply({ content: "✅ Mensaje de alerta enviado correctamente." });
+  const successEmbed = new EmbedBuilder()
+    .setTitle("✅ Mensaje Enviado")
+    .setDescription("Mensaje de alerta enviado correctamente.")
+    .setColor(0x00FF00)
+    .addFields(
+      { name: "📝 Tipo", value: tipo, inline: true },
+      { name: "👤 Enviado por", value: `${interaction.user}`, inline: true }
+    )
+    .setFooter({ text: "Mensaje automático enviado • " + new Date().toLocaleString('es-ES') })
+    .setTimestamp();
+  await interaction.editReply({ embeds: [successEmbed] });
   resetTimer(CHANNEL_ID);
 }
 
@@ -377,17 +488,35 @@ async function handleSorteoCommand(interaction) {
   const now = Date.now();
   const cooldownEnd = commandCooldowns.get(`sorteo_${userId}`) || 0;
   if (now < cooldownEnd) {
-    return await interaction.reply({ content: `⏰ Espera ${Math.ceil((cooldownEnd - now) / 1000)}s antes de crear otro sorteo.`, flags: 64 });
+    const cooldownEmbed = new EmbedBuilder()
+      .setTitle("⏰ Cooldown de Sorteo")
+      .setDescription(`Espera ${Math.ceil((cooldownEnd - now) / 1000)} segundos antes de crear otro sorteo.`)
+      .setColor(0xFFD700)
+      .setFooter({ text: "Sistema de cooldown" })
+      .setTimestamp();
+    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(`sorteo_${userId}`, now + 10000);
   if (!interaction.guild) {
-    return await interaction.editReply({ content: "❌ Este comando solo funciona en servidores." });
+    const errorEmbed = new EmbedBuilder()
+      .setTitle("❌ Error de Servidor")
+      .setDescription("Este comando solo funciona en servidores.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de contexto" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [errorEmbed] });
   }
   const guild = interaction.guild;
   const member = await guild.members.fetch(interaction.user.id);
   if (!hasPermission(member, guild.id, "sorteo")) {
-    return await interaction.editReply({ content: "❌ No tienes permisos para crear sorteos." });
+    const permissionEmbed = new EmbedBuilder()
+      .setTitle("🚫 Sin Permisos")
+      .setDescription("No tienes permisos para crear sorteos.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Permisos insuficientes" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [permissionEmbed] });
   }
   const objeto = interaction.options.getString("objeto");
   const descripcion = interaction.options.getString("descripcion");
@@ -396,25 +525,47 @@ async function handleSorteoCommand(interaction) {
   const duracionStr = interaction.options.getString("duracion");
   const durationMs = parseDurationString(duracionStr);
   if (!durationMs) {
-    return await interaction.editReply({ content: "❌ Duración inválida. Usa formatos: 1D 1H 1Min 1S 1Mes" });
+    const durationEmbed = new EmbedBuilder()
+      .setTitle("❌ Duración Inválida")
+      .setDescription("Duración inválida. Usa formatos: 1D 1H 1Min 1S 1Mes")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de validación" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [durationEmbed] });
   }
   const maxMs = 30 * 24 * 60 * 60 * 1000;
   if (durationMs < 1000 || durationMs > maxMs) {
-    return await interaction.editReply({ content: "❌ La duración debe estar entre 1S y 30Mes(es) aproximados." });
+    const rangeEmbed = new EmbedBuilder()
+      .setTitle("❌ Duración Fuera de Rango")
+      .setDescription("La duración debe estar entre 1S y 30 días aproximados.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de validación" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [rangeEmbed] });
   }
   let imageUrl = null;
   if (imagenAttachment && imagenAttachment.url) imageUrl = imagenAttachment.url;
   else if (imagenUrlOption && /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(imagenUrlOption)) imageUrl = imagenUrlOption;
   if (!imageUrl) {
-    return await interaction.editReply({ content: "❌ Debes subir una imagen válida (archivo o URL terminado en jpg/png/gif/webp)." });
+    const imageEmbed = new EmbedBuilder()
+      .setTitle("❌ Imagen Requerida")
+      .setDescription("Debes subir una imagen válida (archivo o URL terminado en jpg/png/gif/webp).")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de validación" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [imageEmbed] });
   }
   const channel = interaction.channel;
   const endTime = new Date(Date.now() + durationMs);
   const embed = new EmbedBuilder()
     .setTitle(`🎉 SORTEO: ${objeto}`)
-    .setDescription(`${descripcion}\n\nReacciona con ${GIVEAWAY_EMOJI} para participar\n**Termina:** <t:${Math.floor(endTime.getTime() / 1000)}:R>\n\nOrganizado por ${interaction.user}`)
+    .setDescription(`${descripcion}\n\n🎯 **Reacciona con ${GIVEAWAY_EMOJI} para participar**\n⏰ **Termina:** <t:${Math.floor(endTime.getTime() / 1000)}:R>\n\n👤 **Organizado por** ${interaction.user}`)
     .setColor(0x5865F2)
     .setImage(imageUrl)
+    .addFields(
+      { name: "🎁 Premio", value: objeto, inline: true },
+      { name: "⏱️ Duración", value: duracionStr, inline: true }
+    )
     .setFooter({ text: `Termina el ${endTime.toLocaleString('es-ES')}` })
     .setTimestamp(endTime);
   const giveawayMessage = await channel.send({ embeds: [embed] });
@@ -435,7 +586,18 @@ async function handleSorteoCommand(interaction) {
     endGiveaway(giveawayMessage.id);
   }, durationMs);
   sorteoTimers.set(giveawayMessage.id, timeoutId);
-  await interaction.editReply({ content: `✅ Sorteo creado correctamente.\n**ID del sorteo:** \`${giveawayMessage.id}\`\n**Duración:** ${duracionStr}` });
+  const successEmbed = new EmbedBuilder()
+    .setTitle("✅ Sorteo Creado")
+    .setDescription("Sorteo creado correctamente.")
+    .setColor(0x00FF00)
+    .addFields(
+      { name: "🎁 Objeto", value: objeto, inline: true },
+      { name: "🆔 ID del sorteo", value: `\`${giveawayMessage.id}\``, inline: true },
+      { name: "⏱️ Duración", value: duracionStr, inline: true }
+    )
+    .setFooter({ text: "Sorteo creado • " + new Date().toLocaleString('es-ES') })
+    .setTimestamp();
+  await interaction.editReply({ embeds: [successEmbed] });
 }
 
 async function handleExtenderCommand(interaction) {
@@ -443,33 +605,76 @@ async function handleExtenderCommand(interaction) {
   const now = Date.now();
   const cooldownEnd = commandCooldowns.get(`extend_${userId}`) || 0;
   if (now < cooldownEnd) {
-    return await interaction.reply({ content: `⏰ Espera ${Math.ceil((cooldownEnd - now) / 1000)}s antes de extender otro sorteo.`, flags: 64 });
+    const cooldownEmbed = new EmbedBuilder()
+      .setTitle("⏰ Cooldown de Extensión")
+      .setDescription(`Espera ${Math.ceil((cooldownEnd - now) / 1000)} segundos antes de extender otro sorteo.`)
+      .setColor(0xFFD700)
+      .setFooter({ text: "Sistema de cooldown" })
+      .setTimestamp();
+    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(`extend_${userId}`, now + 5000);
   if (!interaction.guild) {
-    return await interaction.editReply({ content: "❌ Este comando solo funciona en servidores." });
+      const errorEmbed = new EmbedBuilder()
+        .setTitle("❌ Error de Servidor")
+        .setDescription("Este comando solo funciona en servidores.")
+        .setColor(0xFF0000)
+        .setFooter({ text: "Error de contexto" })
+        .setTimestamp();
+      return await interaction.editReply({ embeds: [errorEmbed] });
+    }
   }
   const guild = interaction.guild;
   const member = await guild.members.fetch(interaction.user.id);
   if (!hasPermission(member, guild.id, "extender")) {
-    return await interaction.editReply({ content: "❌ No tienes permisos para extender sorteos." });
+    const permissionEmbed = new EmbedBuilder()
+      .setTitle("🚫 Sin Permisos")
+      .setDescription("No tienes permisos para extender sorteos.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Permisos insuficientes" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [permissionEmbed] });
   }
   const messageId = interaction.options.getString("mensaje_id");
   const tiempoStr = interaction.options.getString("tiempo");
   const tiempoMs = parseDurationString(tiempoStr);
   if (!activeSorteos.has(messageId)) {
-    return await interaction.editReply({ content: "❌ No se encontró un sorteo activo con ese ID." });
+    const notFoundEmbed = new EmbedBuilder()
+      .setTitle("❌ Sorteo No Encontrado")
+      .setDescription("No se encontró un sorteo activo con ese ID.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de búsqueda" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [notFoundEmbed] });
   }
   const giveaway = activeSorteos.get(messageId);
   if (giveaway.ended || giveaway.cancelled) {
-    return await interaction.editReply({ content: "❌ Este sorteo ya terminó o fue cancelado." });
+    const endedEmbed = new EmbedBuilder()
+      .setTitle("❌ Sorteo Terminado")
+      .setDescription("Este sorteo ya terminó o fue cancelado.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Estado del sorteo" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [endedEmbed] });
   }
   if (giveaway.paused) {
-    return await interaction.editReply({ content: "❌ No puedes extender un sorteo pausado. Reanúdalo primero." });
+    const pausedEmbed = new EmbedBuilder()
+      .setTitle("❌ Sorteo Pausado")
+      .setDescription("No puedes extender un sorteo pausado. Reanúdalo primero.")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Estado del sorteo" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [pausedEmbed] });
   }
   if (!tiempoMs) {
-    return await interaction.editReply({ content: "❌ Tiempo inválido. Usa formatos: 1D 1H 1Min 1S 1Mes" });
+    const timeErrorEmbed = new EmbedBuilder()
+      .setTitle("❌ Tiempo Inválido")
+      .setDescription("Tiempo inválido. Usa formatos: 1D 1H 1Min 1S 1Mes")
+      .setColor(0xFF0000)
+      .setFooter({ text: "Error de validación" })
+      .setTimestamp();
+    return await interaction.editReply({ embeds: [timeErrorEmbed] });
   }
   if (sorteoTimers.has(messageId)) {
     clearTimeout(sorteoTimers.get(messageId));
@@ -494,13 +699,37 @@ async function handleExtenderCommand(interaction) {
       .setFooter({ text: `Termina el ${new Date(newEndTime).toLocaleString('es-ES')} • EXTENDIDO` })
       .setTimestamp(new Date(newEndTime));
     await message.edit({ embeds: [newEmbed] });
-    await channel.send(`⏰ Sorteo **${giveaway.objeto}** extendido por ${tiempoStr} adicionales por ${interaction.user}`);
-    await interaction.editReply({ content: `✅ Sorteo extendido correctamente por ${tiempoStr}.` });
+    
+    const extendEmbed = new EmbedBuilder()
+      .setTitle("⏰ Sorteo Extendido")
+      .setDescription(`Sorteo **${giveaway.objeto}** extendido por ${tiempoStr} adicionales.`)
+      .setColor(0x00FF00)
+      .addFields(
+        { name: "👤 Moderador", value: `${interaction.user}`, inline: true },
+        { name: "⏱️ Tiempo añadido", value: tiempoStr, inline: true }
+      )
+      .setFooter({ text: "Sorteo extendido • " + new Date().toLocaleString('es-ES') })
+      .setTimestamp();
+    
+    await channel.send({ embeds: [extendEmbed] });
+    
+    const successEmbed = new EmbedBuilder()
+      .setTitle("✅ Extensión Exitosa")
+      .setDescription(`Sorteo extendido correctamente por ${tiempoStr}.`)
+      .setColor(0x00FF00)
+      .setFooter({ text: "Operación exitosa" })
+      .setTimestamp();
+    await interaction.editReply({ embeds: [successEmbed] });
   } catch (err) {
     console.error(`Error extendiendo sorteo: ${err.message}`);
-    await interaction.editReply({ content: "⚠️ Error al procesar la extensión del sorteo." });
+    const errorEmbed = new EmbedBuilder()
+      .setTitle("⚠️ Error de Procesamiento")
+      .setDescription("Error al procesar la extensión del sorteo.")
+      .setColor(0xFF6B35)
+      .setFooter({ text: "Error interno" })
+      .setTimestamp();
+    await interaction.editReply({ embeds: [errorEmbed] });
   }
-}
 
 async function handleControlSorteoCommand(interaction) {
   const userId = interaction.user.id;
