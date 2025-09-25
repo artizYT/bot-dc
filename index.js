@@ -661,12 +661,11 @@ async function handleEstafadorCommand(interaction) {
   if (estafadorAvatarUrl) embed.setThumbnail(estafadorAvatarUrl);
   if (imageUrls.length > 0) embed.setImage(imageUrls[0]);
 
-  try {
-    const channel = await client.channels.fetch(CHANNEL_ID);
+  const channel = interaction.channel;
     if (!channel || !channel.isTextBased()) {
-      return await interaction.editReply({ content: "⚠️ Canal principal no disponible. Revisa CHANNEL_ID." });
+      return await interaction.editReply({ content: "⚠️ Este canal no es válido para enviar el reporte." });
     }
-
+    
     await channel.send({ embeds: [embed] });
 
     if (imageUrls.length > 1) {
