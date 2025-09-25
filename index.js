@@ -95,6 +95,9 @@ async function sendDecoratedMessage(channelId, tipo) {
     let embed;
     
     switch (tipo) {
+      case "estafador":
+        await handleEstafadorCommand(interaction);
+        break;
       case "middleman":
         embed = new EmbedBuilder()
           .setTitle(data.title)
@@ -598,6 +601,90 @@ async function handleSorteoCommand(interaction) {
     .setTimestamp();
   await interaction.editReply({ embeds: [successEmbed] });
 }
+
+async function handleEstafadorCommand(interaction) {
+  await interaction.deferReply({ flags: 64 });
+  if (!interaction.guild) {
+    return await interaction.editReply({ content: "❌ Este comando solo funciona en servidores." });
+  }
+  const guild = interaction.guild;
+  const member = await guild.members.fetch(interaction.user.id);
+  if (!hasPermission(member, guild.id, "alerta")) {
+    return await interaction.editReply({ content: "🚫 No tienes permisos para usar /estafador." });
+  }
+
+  const robloxUrl = interaction.options.getString("roblox_url");
+  const descripcion = interaction.options.getString("descripcion") || "No especificada";
+  const queEstafo = interaction.options.getString("que_estafó");
+  const victima = interaction.options.getUser("victima");
+  const estafadorDiscord = interaction.options.getUser("estafador_discord");
+  const estafadorId = interaction.options.getString("estafador_id");
+  const robloxEstafador = interaction.options.getString("roblox_url_estafador");
+  const prueba = interaction.options.getAttachment("prueba");
+  const imagenesUrlsStr = interaction.options.getString("imagenes_urls") || "";
+
+  const imageUrls = [];
+  if (prueba && prueba.url) imageUrls.push(prueba.url);
+  if (imagenesUrlsStr.trim()) {
+    const parts = imagenesUrlsStr.trim().split(/\s+/);
+    for (const p of parts) {
+      if (/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(p)) imageUrls.push(p);
+    }
+  }
+
+  let estafadorAvatarUrl = null;
+  let estafadorTag = estafadorId || "No especificado";
+  if (estafadorDiscord) {
+    try {
+      const fetched = await client.users.fetch(estafadorDiscord.id);
+      estafadorAvatarUrl = fetched.displayAvatarURL({ dynamic: true, size: 1024 });
+      estafadorTag = `${fetched.tag} (<@${fetched.id}>)`;
+    } catch {}
+  } else if (estafadorId) {
+    estafadorTag = estafadorId;
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle("🚨 Denuncia de Estafa")
+    .setColor(0xFF4500)
+    .addFields(
+      { name: "👤 Víctima", value: victima ? `${victima} (${victima.tag})` : "No especificada", inline: true },
+      { name: "🧾 Qué se estafó", value: queEstafo, inline: true },
+      { name: "🔎 Estafador", value: estafadorTag || "No especificado", inline: false },
+      { name: "🔗 Roblox estafador", value: robloxEstafador || "No especificado", inline: true },
+      { name: "🔗 Roblox (reportante)", value: robloxUrl || "No especificado", inline: true },
+      { name: "📝 Descripción", value: descripcion, inline: false }
+    )
+    .setFooter({ text: `Reportado por ${interaction.user.tag} • ${new Date().toLocaleString("es-ES")}` })
+    .setTimestamp();
+
+  if (estafadorAvatarUrl) embed.setThumbnail(estafadorAvatarUrl);
+  if (imageUrls.length > 0) embed.setImage(imageUrls[0]);
+
+  try {
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel || !channel.isTextBased()) {
+      return await interaction.editReply({ content: "⚠️ Canal principal no disponible. Revisa CHANNEL_ID." });
+    }
+
+    await channel.send({ embeds: [embed] });
+
+    if (imageUrls.length > 1) {
+      for (let i = 1; i < imageUrls.length; i++) {
+        try {
+          await channel.send({ content: imageUrls[i] });
+        } catch {}
+      }
+    }
+
+    await interaction.editReply({ content: "✅ Denuncia enviada correctamente al canal principal." });
+    resetTimer(CHANNEL_ID);
+  } catch (err) {
+    console.error("Error enviando denuncia de estafa:", err);
+    await interaction.editReply({ content: "⚠️ Error al enviar la denuncia. Revisa logs del bot." });
+  }
+}
+
 
 async function handleExtenderCommand(interaction) {
   const userId = interaction.user.id;
@@ -1107,6 +1194,38 @@ client.once("ready", async (readyClient) => {
         option.setName("imagen_url")
           .setDescription("URL de imagen del premio (jpg/png/gif/webp)"))
       .toJSON(),
+      new SlashCommandBuilder()
+        .setName("estafador")
+        .setDescription("Reportar una estafa: datos del estafador, víctima, pruebas y perfil Roblox")
+        .addStringOption(option =>
+          option.setName("roblox_url")
+            .setDescription("URL del perfil de Roblox del estafador (opcional)"))
+        .addStringOption(option =>
+          option.setName("descripcion")
+            .setDescription("Descripción del caso (opcional)"))
+        .addStringOption(option =>
+          option.setName("que_estafó")
+            .setDescription("Qué fue lo estafado (ej: Robux, item X)")
+            .setRequired(true))
+        .addUserOption(option =>
+          option.setName("victima")
+            .setDescription("Víctima (mención Discord)"))
+        .addUserOption(option =>
+          option.setName("estafador_discord")
+            .setDescription("Estafador (mención Discord si aplica)"))
+        .addStringOption(option =>
+          option.setName("estafador_id")
+            .setDescription("ID o nombre del estafador si no está en Discord (ej: id Roblox)"))
+        .addStringOption(option =>
+          option.setName("roblox_url_estafador")
+            .setDescription("URL Roblox del estafador (opcional)"))
+        .addAttachmentOption(option =>
+          option.setName("prueba")
+            .setDescription("Adjunta una imagen como prueba (opcional)"))
+        .addStringOption(option =>
+          option.setName("imagenes_urls")
+            .setDescription("URLs adicionales de imágenes separadas por espacios (opcional)"))
+        .toJSON(),
     new SlashCommandBuilder()
       .setName("extender")
       .setDescription("Extender la duración de un sorteo")
