@@ -860,16 +860,16 @@ client.once("ready", async (readyClient) => {
         option.setName("descripcion")
           .setDescription("Descripción del sorteo")
           .setRequired(true))
+      .addStringOption(option =>
+        option.setName("duracion")
+          .setDescription("Duración (ej: 1D 2H 30Min 45S 1Mes)")
+          .setRequired(true))
       .addAttachmentOption(option =>
         option.setName("imagen")
           .setDescription("Imagen del premio (archivo)"))
       .addStringOption(option =>
         option.setName("imagen_url")
           .setDescription("URL de imagen del premio (jpg/png/gif/webp)"))
-      .addStringOption(option =>
-        option.setName("duracion")
-          .setDescription("Duración (ej: 1D 2H 30Min 45S 1Mes)")
-          .setRequired(true))
       .toJSON(),
     new SlashCommandBuilder()
       .setName("extender")
