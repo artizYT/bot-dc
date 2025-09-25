@@ -1280,7 +1280,8 @@ client.once("ready", async (readyClient) => {
             { name: "🎉 Sorteo", value: "sorteo" },
             { name: "⏰ Extender", value: "extender" },
             { name: "📢 Alerta", value: "alerta" },
-            { name: "🔨 Ban/Unban", value: "ban" }
+            { name: "🔨 Ban/Unban", value: "ban" },
+            { name: "🚨 Estafador", value: "estafador" }
           ))
       .toJSON(),
     new SlashCommandBuilder()
