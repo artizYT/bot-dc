@@ -104,7 +104,7 @@ async function sendDecoratedMessage(channelId, tipo) {
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
             { name: "🎫 Tickets", value: data.url, inline: false }
           )
-          .setThumbnail("https://static.vecteezy.com/system/resources/previews/018/931/005/original/icon-of-lock-lock-sign-and-symbol-locked-padlock-icon-png.png")
+          .setThumbnail("https://png.pngtree.com/png-clipart/20230818/original/pngtree-lock-icon-protection-padlock-safety-picture-image_8026948.png")
           .setFooter({ text: "🛡️ Tradeos seguros • " + new Date().toLocaleString("es-ES") })
           .setTimestamp();
         break;
@@ -433,7 +433,7 @@ async function handleAlertaCommand(interaction) {
       .setColor(0xFFD700)
       .setFooter({ text: "Sistema de cooldown" })
       .setTimestamp();
-    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
+    return await interaction.editReply({ embeds: [cooldownEmbed] });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(userId, now + COOLDOWN_MS);
@@ -493,7 +493,7 @@ async function handleSorteoCommand(interaction) {
       .setColor(0xFFD700)
       .setFooter({ text: "Sistema de cooldown" })
       .setTimestamp();
-    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
+    return await interaction.editReply({ embeds: [cooldownEmbed] });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(`sorteo_${userId}`, now + 10000);
@@ -610,7 +610,7 @@ async function handleExtenderCommand(interaction) {
       .setColor(0xFFD700)
       .setFooter({ text: "Sistema de cooldown" })
       .setTimestamp();
-    return await interaction.reply({ embeds: [cooldownEmbed], flags: 64 });
+    return await interaction.editReply({ embeds: [cooldownEmbed] });
   }
   await interaction.deferReply({ flags: 64 });
   commandCooldowns.set(`extend_${userId}`, now + 5000);
