@@ -116,7 +116,7 @@ async function sendDecoratedMessage(channelId, tipo) {
       case "tiktok":
         embed = new EmbedBuilder()
           .setTitle(data.title)
-          .setColor(0xFF0050)
+          .setColor(0xFF0000)
           .addFields(
             { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
             { name: "🇺🇸 English", value: data.descriptionEN, inline: false },
@@ -130,7 +130,7 @@ async function sendDecoratedMessage(channelId, tipo) {
       case "advertencia":
       embed = new EmbedBuilder()
         .setTitle(data.title)
-        .setColor(0xFFD700)
+        .setColor(0xFF0000)
         .addFields(
           { name: "🇪🇸 Español", value: data.descriptionES, inline: false },
           { name: "🇺🇸 English", value: data.descriptionEN, inline: false }
@@ -376,7 +376,7 @@ async function endGiveaway(messageId) {
       const noParticipantsEmbed = new EmbedBuilder()
         .setTitle("🎉 Sorteo Terminado")
         .setDescription(`**Premio:** ${giveaway.objeto}\n❌ **Sin participantes válidos**`)
-        .setColor(0xFF6B35)
+        .setColor(0xFF0000)
         .setFooter({ text: "Sorteo terminado • " + new Date().toLocaleString('es-ES') })
         .setTimestamp();
       
@@ -390,7 +390,7 @@ async function endGiveaway(messageId) {
       const noParticipantsEmbed = new EmbedBuilder()
         .setTitle("🎉 Sorteo Terminado")
         .setDescription(`**Premio:** ${giveaway.objeto}\n❌ **Sin participantes válidos**`)
-        .setColor(0xFF6B35)
+        .setColor(0xFF0000)
         .setFooter({ text: "Sorteo terminado • " + new Date().toLocaleString('es-ES') })
         .setTimestamp();
       
@@ -434,7 +434,7 @@ async function handleAlertaCommand(interaction) {
     const cooldownEmbed = new EmbedBuilder()
       .setTitle("⏰ Cooldown Activo")
       .setDescription(`Espera ${Math.ceil((cooldownEnd - now) / 1000)} segundos antes de usar este comando.`)
-      .setColor(0xFFD700)
+      .setColor(0xFF0000)
       .setFooter({ text: "Sistema de cooldown" })
       .setTimestamp();
     return await interaction.editReply({ embeds: [cooldownEmbed] });
@@ -494,7 +494,7 @@ async function handleSorteoCommand(interaction) {
     const cooldownEmbed = new EmbedBuilder()
       .setTitle("⏰ Cooldown de Sorteo")
       .setDescription(`Espera ${Math.ceil((cooldownEnd - now) / 1000)} segundos antes de crear otro sorteo.`)
-      .setColor(0xFFD700)
+      .setColor(0xFF0000)
       .setFooter({ text: "Sistema de cooldown" })
       .setTimestamp();
     return await interaction.editReply({ embeds: [cooldownEmbed] });
@@ -1043,7 +1043,7 @@ async function handleUnbanCommand(interaction) {
     } catch {}
     const embed = new EmbedBuilder()
       .setTitle("✅ USUARIO DESBANEADO")
-      .setColor(0xFF0000) // rojo
+      .setColor(0xFF0000)
       .setThumbnail(avatarURL || "https://i.imgur.com/Qr0ZpWQ.png")
       .addFields(
         { name: "👤 Usuario", value: `${userTag} (${userId})`, inline: true },
@@ -1076,7 +1076,7 @@ async function handlePostulacionesCommand(interaction) {
     const embed = new EmbedBuilder()
       .setTitle(`📋 ${titulo}`)
       .setDescription(`> ${descripcion}\n\n# 🔗 Postula en el botón de abajo`)
-      .setColor(0x00ADEF)
+      .setColor(0xFF0000)
       .setTimestamp();
 
     if (imagen) {
@@ -1156,7 +1156,7 @@ async function handlePostulacionesCommand(interaction) {
     const embed = new EmbedBuilder()
       .setTitle(`📋 ${nuevoTitulo}`)
       .setDescription(nuevaDesc + (data.abiertas ? "\n\n✅ **Postulaciones abiertas**" : "\n\n❌ **Postulaciones cerradas**"))
-      .setColor(0x00ADEF)
+      .setColor(0xFF0000)
       .setTimestamp();
 
     if (nuevaImg) embed.setImage(nuevaImg);
