@@ -45,7 +45,7 @@ const mensajes = {
     title: "🛡️ Servicio de Middleman Confiable",
     descriptionES: "En este servidor contamos con middleman confiables para que tus tradeos sean 100% seguros.\nPide a través de tickets:",
     descriptionEN: "On this server we have reliable middlemen so your trades are 100% safe.\nRequested through tickets:",
-    url: "https://discord.com/channels/1418586395672449107/1419067482450165952"
+    url: "https://discord.com/channels/1418586395672449107/1419901904992997476"
   },
   tiktok: {
     title: "📱 Síguenos en TikTok",
