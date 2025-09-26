@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, SlashCommandBuilder, PermissionsBitField, EmbedBuilder } = require("discord.js");
+const { Client, ActionRowBuilder,GatewayIntentBits, ButtonStyle, ButtonBuilder, SlashCommandBuilder, PermissionsBitField, EmbedBuilder } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v10");
 const express = require("express");
@@ -25,6 +25,7 @@ const client = new Client({
   ],
 });
 
+const postulacionesActivas = new Map();
 const rolePermissions = new Map();
 const commandCooldowns = new Map();
 const activeSorteos = new Map();
@@ -1059,6 +1060,133 @@ async function handleUnbanCommand(interaction) {
   }
 }
 
+async function handlePostulacionesCommand(interaction) {
+  const sub = interaction.options.getSubcommand();
+  const channel = interaction.channel;
+
+  if (sub === "crear") {
+    const titulo = interaction.options.getString("titulo");
+    const descripcion = interaction.options.getString("descripcion");
+    const link = interaction.options.getString("link");
+    const imagen = interaction.options.getAttachment("imagen");
+    const canalOpcion = interaction.options.getChannel("canal");
+
+    const targetChannel = canalOpcion || interaction.channel;
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📋 ${titulo}`)
+      .setDescription(`> ${descripcion}\n\n# 🔗 Postula en el botón de abajo`)
+      .setColor(0x00ADEF)
+      .setTimestamp();
+
+    if (imagen) {
+      embed.setImage("attachment://" + imagen.name);
+    }
+
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel("📌 Postularme")
+        .setStyle(ButtonStyle.Link)
+        .setURL(link)
+    );
+
+    const msg = await targetChannel.send({ embeds: [embed], components: [row], files: imagen ? [imagen] : [] });
+    postulacionesActivas.set(msg.id, {
+      mensajeId: msg.id,
+      channelId: targetChannel.id,
+      titulo,
+      descripcion,
+      link,
+      imagen,
+      abiertas: true
+    });
+
+    return await interaction.reply({ content: "✅ Postulaciones creadas.", ephemeral: true });
+  }
+
+  if (sub === "status") {
+    const estado = interaction.options.getString("estado");
+    const mensajeId = interaction.options.getString("mensaje_id");
+
+    if (!postulacionesActivas.has(mensajeId)) {
+      return await interaction.reply({ content: "❌ No encontré ese mensaje de postulaciones.", ephemeral: true });
+    }
+
+    const data = postulacionesActivas.get(mensajeId);
+    const chan = await client.channels.fetch(data.channelId);
+    const msg = await chan.messages.fetch(data.mensajeId);
+    const embed = EmbedBuilder.from(msg.embeds[0]);
+
+    if (estado === "cerradas") {
+      embed.setDescription(`${data.descripcion}\n\n❌ **Postulaciones cerradas**`);
+      await msg.edit({ embeds: [embed], components: [] });
+      data.abiertas = false;
+    } else {
+      embed.setDescription(`${data.descripcion}\n\n✅ **Postulaciones abiertas**`);
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("📌 Postularme")
+          .setStyle(ButtonStyle.Link)
+          .setURL(data.link)
+      );
+      await msg.edit({ embeds: [embed], components: [row] });
+      data.abiertas = true;
+    }
+
+    postulacionesActivas.set(mensajeId, data);
+    return await interaction.reply({ content: `Estado actualizado a **${estado}**.`, ephemeral: true });
+  }
+
+  if (sub === "modificar") {
+    const mensajeId = interaction.options.getString("mensaje_id");
+    if (!postulacionesActivas.has(mensajeId)) {
+      return await interaction.reply({ content: "❌ No encontré ese mensaje de postulaciones.", ephemeral: true });
+    }
+
+    const data = postulacionesActivas.get(mensajeId);
+    const chan = await client.channels.fetch(data.channelId);
+    const msg = await chan.messages.fetch(data.mensajeId);
+
+    const nuevoTitulo = interaction.options.getString("titulo") || data.titulo;
+    const nuevaDesc = interaction.options.getString("descripcion") || data.descripcion;
+    const nuevoLink = interaction.options.getString("link") || data.link;
+    const nuevaImg = interaction.options.getString("imagen") || data.imagen;
+
+    const embed = new EmbedBuilder()
+      .setTitle(`📋 ${nuevoTitulo}`)
+      .setDescription(nuevaDesc + (data.abiertas ? "\n\n✅ **Postulaciones abiertas**" : "\n\n❌ **Postulaciones cerradas**"))
+      .setColor(0x00ADEF)
+      .setTimestamp();
+
+    if (nuevaImg) embed.setImage(nuevaImg);
+
+    let components = [];
+    if (data.abiertas) {
+      components = [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setLabel("📌 Postularme")
+            .setStyle(ButtonStyle.Link)
+            .setURL(nuevoLink)
+        )
+      ];
+    }
+
+    await msg.edit({ embeds: [embed], components });
+
+    postulacionesActivas.set(mensajeId, {
+      ...data,
+      titulo: nuevoTitulo,
+      descripcion: nuevaDesc,
+      link: nuevoLink,
+      imagen: nuevaImg
+    });
+
+    return await interaction.reply({ content: "✅ Postulación modificada.", ephemeral: true });
+  }
+}
+
 client.on("messageCreate", async (msg) => {
   if (msg.author.bot) return;
   if (mutedUsers.has(msg.author.id)) {
@@ -1104,6 +1232,9 @@ client.on("interactionCreate", async (interaction) => {
     switch (interaction.commandName) {
       case "alerta":
         await handleAlertaCommand(interaction);
+        break;
+      case "postulaciones":
+        await handlePostulacionesCommand(interaction);
         break;
       case "sorteo":
         await handleSorteoCommand(interaction);
@@ -1167,7 +1298,8 @@ client.once("ready", async (readyClient) => {
             { name: "🎵 TikTok", value: "tiktok" },
             { name: "🛠️ Middleman", value: "middleman" },
             { name: "⚠️ Advertencia", value: "advertencia" },
-            { name: "📦 Inventario", value: "inventario" }
+            { name: "📦 Inventario", value: "inventario" },
+            { name: "📋 Postulaciones", value: "postulaciones" }
           ))
       .toJSON(),
     new SlashCommandBuilder()
@@ -1308,6 +1440,35 @@ client.once("ready", async (readyClient) => {
       .addStringOption(option =>
         option.setName("razon")
           .setDescription("Razón del unban"))
+      .toJSON(),
+      new SlashCommandBuilder()
+      .setName("postulaciones")
+      .setDescription("Gestionar mensajes de postulaciones")
+      .addSubcommand(sub =>
+        sub.setName("crear")
+          .setDescription("Crear un mensaje de postulaciones")
+          .addStringOption(o => o.setName("titulo").setDescription("Título").setRequired(true))
+          .addStringOption(o => o.setName("descripcion").setDescription("Descripción").setRequired(true))
+          .addStringOption(o => o.setName("link").setDescription("Link del formulario").setRequired(true))
+          .setDescription("Sube una imagen para el embed")
+          .addChannelOption(o => o.setName("canal").setDescription("Canal donde enviar las postulaciones"))
+      )
+      .addSubcommand(sub =>
+        sub.setName("status")
+          .setDescription("Cambiar estado de postulaciones")
+          .addStringOption(o => o.setName("mensaje_id").setDescription("ID del mensaje").setRequired(true))
+          .addStringOption(o => o.setName("estado").setDescription("Estado").setRequired(true)
+            .addChoices({ name: "Abiertas", value: "abiertas" }, { name: "Cerradas", value: "cerradas" }))
+      )
+      .addSubcommand(sub =>
+        sub.setName("modificar")
+          .setDescription("Modificar datos del mensaje")
+          .addStringOption(o => o.setName("mensaje_id").setDescription("ID del mensaje").setRequired(true))
+          .addStringOption(o => o.setName("titulo").setDescription("Nuevo título"))
+          .addStringOption(o => o.setName("descripcion").setDescription("Nueva descripción"))
+          .addStringOption(o => o.setName("link").setDescription("Nuevo link"))
+          .setDescription("Sube una imagen para el embed")
+      )
       .toJSON()
   ];
 
